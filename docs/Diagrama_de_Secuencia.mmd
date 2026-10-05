@@ -1,0 +1,26 @@
+sequenceDiagram
+    actor Recepcionista
+    participant Sistema as Recepcion
+    participant T as Turno
+
+    Recepcionista->>Sistema: SacarTurno(dni, idEstudio, fechaHora)
+    
+    %% Autodelegación 1: Buscar al paciente en memoria
+    Sistema->>Sistema: paciente = BuscarPaciente(dni)
+    
+    alt Paciente no existe
+        Sistema-->>Recepcionista: Error: DNI no registrado en el sistema
+    else Paciente encontrado
+        %% Autodelegación 2: Verificar que el horario no esté pisado
+        Sistema->>Sistema: libre = VerificarDisponibilidad(fechaHora)
+        
+        alt Horario ocupado
+            Sistema-->>Recepcionista: Error: El horario seleccionado no está disponible
+        else Horario disponible
+            %% Creación del objeto y asignación
+            Sistema->>T: new Turno(paciente, estudio, fechaHora)
+            T-->>Sistema: nuevoTurno
+            Sistema->>Sistema: agregarTurnoLista(nuevoTurno)
+            Sistema-->>Recepcionista: Éxito: Turno asignado correctamente
+        end
+    end

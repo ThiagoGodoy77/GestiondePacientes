@@ -1,0 +1,52 @@
+classDiagram
+    class GestorDeAtencion {
+        - pacientes: List~Paciente~
+        - turnos: List~Turno~
+        - resultados: List~Resultado~
+        + ConsultarTurno(dni: string): Turno
+        + SacarTurno(paciente: Paciente, estudio: Estudio, fechaHora: DateTime): Turno
+        + AnularTurno(turno: Turno): bool
+        + RegistrarRetiroResultado(idResultado: int): bool
+    }
+
+    class Paciente {
+        - dni: string
+        - nombre: string
+        - apellido: string
+        + GetDni(): string
+    }
+
+    class Estudio {
+        - id: int
+        - nombre: string
+        - descripcion: string
+        - profesional: string
+        - asistente: string
+        + GetNombre(): string
+        + GetProfesional(): string
+    }
+
+    class Turno {
+        - fechaHora: DateTime
+        - paciente: Paciente
+        - estudio: Estudio
+        + GetFechaHora(): DateTime
+        + GetPaciente(): Paciente
+    }
+
+    class Resultado {
+        - id: int
+        - turnoAsociado: Turno
+        - disponible: bool
+        - retirado: bool
+        + MarcarComoRetirado(): void
+        + EstaDisponible(): bool
+    }
+
+    %% Relaciones (Composición y Agregación)
+    GestorDeAtencion "1" *-- "*" Paciente : gestiona
+    GestorDeAtencion "1" *-- "*" Turno : gestiona
+    GestorDeAtencion "1" *-- "*" Resultado : gestiona
+    Turno "1" o-- "1" Paciente : pertenece a
+    Turno "1" o-- "1" Estudio : requiere
+    Resultado "1" o-- "1" Turno : corresponde a
