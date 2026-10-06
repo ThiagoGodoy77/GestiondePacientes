@@ -22,17 +22,13 @@ namespace GestionPacientes
 
     //para consultar
 
-    public string Dni
+    public string GetDni()
     {
-        get { return dni; }
+        return dni;
     }
-    public string Nombre
+    public string GetNombreCompleto()
     {
-        get { return nombre; }
-    }
-    public string Apellido
-    {
-        get { return apellido; }
+        return $"{nombre} {apellido}";
     }
 
     }
