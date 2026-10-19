@@ -11,7 +11,7 @@ Permite consultar y registrar el retiro de un resultado, verificando previamente
 🛠️ Tecnologías y Arquitectura
 Lenguaje y Entorno: C# .NET (Windows Forms).
 
-Base de Datos: PostgreSQL.
+Base de Datos: Local
 
 ORM: Entity Framework Core (Npgsql).
 
