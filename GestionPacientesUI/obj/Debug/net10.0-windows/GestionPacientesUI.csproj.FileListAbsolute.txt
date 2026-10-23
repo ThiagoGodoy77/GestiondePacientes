@@ -1,4 +1,0 @@
-C:\Users\thiag\Desktop\GestiondePacientes-main\GestionPacientesUI\obj\Debug\net10.0-windows\GestionPacientesUI.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\thiag\Desktop\GestiondePacientes-main\GestionPacientesUI\obj\Debug\net10.0-windows\GestionPacientesUI.AssemblyInfoInputs.cache
-C:\Users\thiag\Desktop\GestiondePacientes-main\GestionPacientesUI\obj\Debug\net10.0-windows\GestionPacientesUI.AssemblyInfo.cs
-C:\Users\thiag\Desktop\GestiondePacientes-main\GestionPacientesUI\obj\Debug\net10.0-windows\GestionPacientesUI.csproj.CoreCompileInputs.cache
