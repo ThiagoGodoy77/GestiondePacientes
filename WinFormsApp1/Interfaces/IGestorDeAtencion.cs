@@ -9,10 +9,11 @@ namespace WinFormsApp1
     {
         void RegistrarPaciente(Paciente paciente);
         void RegistrarResultado(Resultado resultado);
-        Turno ConsultarTurno(string dni);
+        List<Turno> ConsultarTurnos(string dni);
         List<DateTime> ObtenerHorariosDisponibles(DateTime fecha);
         Turno SacarTurno(Paciente paciente, Estudio estudio, DateTime fechaHora);
+       
+        Resultado ConsultarResultadoPendientePorDni(string dni);
         bool RegistrarRetiroResultado(int idResultado);
-        Paciente ConsultarPaciente(string dni);
     }
 }
