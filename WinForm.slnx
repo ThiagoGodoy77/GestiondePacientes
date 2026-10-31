@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="GestionPacientes.Tests/GestionPacientes.Tests.csproj" />
   <Project Path="WinFormsApp1/WinFormsApp1.csproj" />
 </Solution>
