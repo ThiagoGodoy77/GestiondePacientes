@@ -39,16 +39,16 @@
             lblEstudio = new Label();
             grpResultado = new GroupBox();
             btnRetirarResultado = new Button();
-            txtIdResultado = new TextBox();
-            lblIdResultado = new Label();
+            txtDniResultado = new TextBox();
+            lblDniResultado = new Label();
             pnlHeader.SuspendLayout();
             grpConsulta.SuspendLayout();
             grpTurno.SuspendLayout();
             grpResultado.SuspendLayout();
             SuspendLayout();
-            // 
+            //
             // pnlHeader
-            // 
+            //
             pnlHeader.BackColor = Color.FromArgb(44, 62, 80);
             pnlHeader.Controls.Add(lblSubtitle);
             pnlHeader.Controls.Add(lblTitle);
@@ -58,35 +58,33 @@
             pnlHeader.Name = "pnlHeader";
             pnlHeader.Size = new Size(1029, 117);
             pnlHeader.TabIndex = 0;
-            // 
+            //
             // lblSubtitle
-            // 
+            //
             lblSubtitle.AutoSize = true;
             lblSubtitle.Font = new Font("Segoe UI", 9F);
             lblSubtitle.ForeColor = Color.FromArgb(189, 195, 199);
-            lblSubtitle.Location = new Point(358, 73);
+            lblSubtitle.Location = new Point(365, 73);
             lblSubtitle.Margin = new Padding(4, 0, 4, 0);
             lblSubtitle.Name = "lblSubtitle";
             lblSubtitle.Size = new Size(300, 25);
             lblSubtitle.TabIndex = 0;
             lblSubtitle.Text = "Fernando Bortoluzzi - Thiago Godoy";
-            lblSubtitle.Click += lblSubtitle_Click;
-            // 
+            //
             // lblTitle
-            // 
+            //
             lblTitle.AutoSize = true;
             lblTitle.Font = new Font("Segoe UI Semibold", 14.25F, FontStyle.Bold);
             lblTitle.ForeColor = Color.White;
-            lblTitle.Location = new Point(300, 15);
+            lblTitle.Location = new Point(307, 15);
             lblTitle.Margin = new Padding(4, 0, 4, 0);
             lblTitle.Name = "lblTitle";
             lblTitle.Size = new Size(415, 40);
             lblTitle.TabIndex = 1;
             lblTitle.Text = "Centro Médico - Gestión Local";
-            lblTitle.Click += lblTitle_Click;
-            // 
+            //
             // grpConsulta
-            // 
+            //
             grpConsulta.Controls.Add(lblResultadoConsulta);
             grpConsulta.Controls.Add(btnConsultarTurno);
             grpConsulta.Controls.Add(txtDniConsulta);
@@ -101,23 +99,24 @@
             grpConsulta.TabIndex = 1;
             grpConsulta.TabStop = false;
             grpConsulta.Text = "1. Consulta de Turno por DNI";
-            grpConsulta.Enter += grpConsulta_Enter;
-            // 
+            //
             // lblResultadoConsulta
-            // 
+            //
             lblResultadoConsulta.AutoSize = true;
             lblResultadoConsulta.Font = new Font("Segoe UI", 9.25F, FontStyle.Italic);
             lblResultadoConsulta.ForeColor = Color.FromArgb(127, 140, 141);
-            lblResultadoConsulta.Location = new Point(319, 35);
+            lblResultadoConsulta.Location = new Point(29, 35);
             lblResultadoConsulta.Margin = new Padding(4, 0, 4, 0);
+            lblResultadoConsulta.MaximumSize = new Size(910, 0);
             lblResultadoConsulta.Name = "lblResultadoConsulta";
             lblResultadoConsulta.Size = new Size(323, 25);
-            lblResultadoConsulta.TabIndex = 0;
+            lblResultadoConsulta.TabIndex = 3;
             lblResultadoConsulta.Text = "Ingrese un DNI para buscar su turno...";
-            // 
+            //
             // btnConsultarTurno
-            // 
+            //
             btnConsultarTurno.BackColor = Color.FromArgb(52, 152, 219);
+            btnConsultarTurno.Cursor = Cursors.Hand;
             btnConsultarTurno.FlatAppearance.BorderSize = 0;
             btnConsultarTurno.FlatStyle = FlatStyle.Flat;
             btnConsultarTurno.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold);
@@ -130,19 +129,20 @@
             btnConsultarTurno.Text = "Buscar Turno";
             btnConsultarTurno.UseVisualStyleBackColor = false;
             btnConsultarTurno.Click += btnConsultarTurno_Click;
-            // 
+            //
             // txtDniConsulta
-            // 
+            //
             txtDniConsulta.Font = new Font("Segoe UI", 9F);
             txtDniConsulta.Location = new Point(340, 100);
             txtDniConsulta.Margin = new Padding(4, 5, 4, 5);
+            txtDniConsulta.MaxLength = 10;
             txtDniConsulta.Name = "txtDniConsulta";
             txtDniConsulta.PlaceholderText = "Ej: 12345678";
             txtDniConsulta.Size = new Size(227, 31);
             txtDniConsulta.TabIndex = 0;
-            // 
+            //
             // lblDniConsulta
-            // 
+            //
             lblDniConsulta.AutoSize = true;
             lblDniConsulta.Font = new Font("Segoe UI", 9F);
             lblDniConsulta.ForeColor = Color.FromArgb(51, 51, 51);
@@ -152,9 +152,9 @@
             lblDniConsulta.Size = new Size(145, 25);
             lblDniConsulta.TabIndex = 2;
             lblDniConsulta.Text = "DNI del Paciente:";
-            // 
+            //
             // grpTurno
-            // 
+            //
             grpTurno.Controls.Add(txtApellidoTurno);
             grpTurno.Controls.Add(lblApellidoTurno);
             grpTurno.Controls.Add(txtNombreTurno);
@@ -176,19 +176,20 @@
             grpTurno.TabIndex = 2;
             grpTurno.TabStop = false;
             grpTurno.Text = "2. Solicitar y Asignar Nuevo Turno";
-            // 
+            //
             // txtApellidoTurno
-            // 
+            //
             txtApellidoTurno.Font = new Font("Segoe UI", 9F);
             txtApellidoTurno.Location = new Point(616, 72);
             txtApellidoTurno.Margin = new Padding(4, 5, 4, 5);
+            txtApellidoTurno.MaxLength = 50;
             txtApellidoTurno.Name = "txtApellidoTurno";
             txtApellidoTurno.PlaceholderText = "Ej: Pérez";
             txtApellidoTurno.Size = new Size(213, 31);
             txtApellidoTurno.TabIndex = 2;
-            // 
+            //
             // lblApellidoTurno
-            // 
+            //
             lblApellidoTurno.AutoSize = true;
             lblApellidoTurno.Font = new Font("Segoe UI", 9F);
             lblApellidoTurno.ForeColor = Color.FromArgb(51, 51, 51);
@@ -198,19 +199,20 @@
             lblApellidoTurno.Size = new Size(82, 25);
             lblApellidoTurno.TabIndex = 3;
             lblApellidoTurno.Text = "Apellido:";
-            // 
+            //
             // txtNombreTurno
-            // 
+            //
             txtNombreTurno.Font = new Font("Segoe UI", 9F);
             txtNombreTurno.Location = new Point(387, 72);
             txtNombreTurno.Margin = new Padding(4, 5, 4, 5);
+            txtNombreTurno.MaxLength = 50;
             txtNombreTurno.Name = "txtNombreTurno";
             txtNombreTurno.PlaceholderText = "Ej: Juan";
             txtNombreTurno.Size = new Size(213, 31);
             txtNombreTurno.TabIndex = 1;
-            // 
+            //
             // lblNombreTurno
-            // 
+            //
             lblNombreTurno.AutoSize = true;
             lblNombreTurno.Font = new Font("Segoe UI", 9F);
             lblNombreTurno.ForeColor = Color.FromArgb(51, 51, 51);
@@ -220,19 +222,20 @@
             lblNombreTurno.Size = new Size(82, 25);
             lblNombreTurno.TabIndex = 4;
             lblNombreTurno.Text = "Nombre:";
-            // 
+            //
             // txtDniTurno
-            // 
+            //
             txtDniTurno.Font = new Font("Segoe UI", 9F);
             txtDniTurno.Location = new Point(159, 72);
             txtDniTurno.Margin = new Padding(4, 5, 4, 5);
+            txtDniTurno.MaxLength = 10;
             txtDniTurno.Name = "txtDniTurno";
             txtDniTurno.PlaceholderText = "Ej: 12345678";
             txtDniTurno.Size = new Size(198, 31);
             txtDniTurno.TabIndex = 0;
-            // 
+            //
             // lblDniTurno
-            // 
+            //
             lblDniTurno.AutoSize = true;
             lblDniTurno.Font = new Font("Segoe UI", 9F);
             lblDniTurno.ForeColor = Color.FromArgb(51, 51, 51);
@@ -242,10 +245,11 @@
             lblDniTurno.Size = new Size(145, 25);
             lblDniTurno.TabIndex = 5;
             lblDniTurno.Text = "DNI del Paciente:";
-            // 
+            //
             // btnSacarTurno
-            // 
+            //
             btnSacarTurno.BackColor = Color.FromArgb(39, 174, 96);
+            btnSacarTurno.Cursor = Cursors.Hand;
             btnSacarTurno.FlatAppearance.BorderSize = 0;
             btnSacarTurno.FlatStyle = FlatStyle.Flat;
             btnSacarTurno.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold);
@@ -258,9 +262,9 @@
             btnSacarTurno.Text = "Confirmar Turno";
             btnSacarTurno.UseVisualStyleBackColor = false;
             btnSacarTurno.Click += btnSacarTurno_Click;
-            // 
+            //
             // cmbHorarios
-            // 
+            //
             cmbHorarios.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbHorarios.Font = new Font("Segoe UI", 9F);
             cmbHorarios.FormattingEnabled = true;
@@ -269,9 +273,9 @@
             cmbHorarios.Name = "cmbHorarios";
             cmbHorarios.Size = new Size(198, 33);
             cmbHorarios.TabIndex = 4;
-            // 
+            //
             // lblHorario
-            // 
+            //
             lblHorario.AutoSize = true;
             lblHorario.Font = new Font("Segoe UI", 9F);
             lblHorario.ForeColor = Color.FromArgb(51, 51, 51);
@@ -281,9 +285,9 @@
             lblHorario.Size = new Size(166, 25);
             lblHorario.TabIndex = 6;
             lblHorario.Text = "Horario Disponible:";
-            // 
+            //
             // cmbEstudios
-            // 
+            //
             cmbEstudios.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbEstudios.Font = new Font("Segoe UI", 9F);
             cmbEstudios.FormattingEnabled = true;
@@ -292,9 +296,9 @@
             cmbEstudios.Name = "cmbEstudios";
             cmbEstudios.Size = new Size(313, 33);
             cmbEstudios.TabIndex = 3;
-            // 
+            //
             // lblEstudio
-            // 
+            //
             lblEstudio.AutoSize = true;
             lblEstudio.Font = new Font("Segoe UI", 9F);
             lblEstudio.ForeColor = Color.FromArgb(51, 51, 51);
@@ -304,12 +308,12 @@
             lblEstudio.Size = new Size(139, 25);
             lblEstudio.TabIndex = 7;
             lblEstudio.Text = "Estudio Médico:";
-            // 
+            //
             // grpResultado
-            // 
+            //
             grpResultado.Controls.Add(btnRetirarResultado);
-            grpResultado.Controls.Add(txtIdResultado);
-            grpResultado.Controls.Add(lblIdResultado);
+            grpResultado.Controls.Add(txtDniResultado);
+            grpResultado.Controls.Add(lblDniResultado);
             grpResultado.Font = new Font("Segoe UI Semibold", 9.75F, FontStyle.Bold);
             grpResultado.ForeColor = Color.FromArgb(44, 62, 80);
             grpResultado.Location = new Point(29, 608);
@@ -320,10 +324,11 @@
             grpResultado.TabIndex = 3;
             grpResultado.TabStop = false;
             grpResultado.Text = "3. Entrega y Registro de Retiro de Resultados";
-            // 
+            //
             // btnRetirarResultado
-            // 
+            //
             btnRetirarResultado.BackColor = Color.FromArgb(142, 68, 173);
+            btnRetirarResultado.Cursor = Cursors.Hand;
             btnRetirarResultado.FlatAppearance.BorderSize = 0;
             btnRetirarResultado.FlatStyle = FlatStyle.Flat;
             btnRetirarResultado.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Bold);
@@ -336,31 +341,32 @@
             btnRetirarResultado.Text = "Registrar Retiro";
             btnRetirarResultado.UseVisualStyleBackColor = false;
             btnRetirarResultado.Click += btnRetirarResultado_Click;
-            // 
-            // txtIdResultado
-            // 
-            txtIdResultado.Font = new Font("Segoe UI", 9F);
-            txtIdResultado.Location = new Point(29, 72);
-            txtIdResultado.Margin = new Padding(4, 5, 4, 5);
-            txtIdResultado.Name = "txtIdResultado";
-            txtIdResultado.PlaceholderText = "Ej: 100, 101 o 102";
-            txtIdResultado.Size = new Size(227, 31);
-            txtIdResultado.TabIndex = 0;
-            // 
-            // lblIdResultado
-            // 
-            lblIdResultado.AutoSize = true;
-            lblIdResultado.Font = new Font("Segoe UI", 9F);
-            lblIdResultado.ForeColor = Color.FromArgb(51, 51, 51);
-            lblIdResultado.Location = new Point(29, 42);
-            lblIdResultado.Margin = new Padding(4, 0, 4, 0);
-            lblIdResultado.Name = "lblIdResultado";
-            lblIdResultado.Size = new Size(142, 25);
-            lblIdResultado.TabIndex = 2;
-            lblIdResultado.Text = "ID de Resultado:";
-            // 
+            //
+            // txtDniResultado
+            //
+            txtDniResultado.Font = new Font("Segoe UI", 9F);
+            txtDniResultado.Location = new Point(29, 72);
+            txtDniResultado.Margin = new Padding(4, 5, 4, 5);
+            txtDniResultado.MaxLength = 10;
+            txtDniResultado.Name = "txtDniResultado";
+            txtDniResultado.PlaceholderText = "Ej: 12345678";
+            txtDniResultado.Size = new Size(227, 31);
+            txtDniResultado.TabIndex = 0;
+            //
+            // lblDniResultado
+            //
+            lblDniResultado.AutoSize = true;
+            lblDniResultado.Font = new Font("Segoe UI", 9F);
+            lblDniResultado.ForeColor = Color.FromArgb(51, 51, 51);
+            lblDniResultado.Location = new Point(29, 42);
+            lblDniResultado.Margin = new Padding(4, 0, 4, 0);
+            lblDniResultado.Name = "lblDniResultado";
+            lblDniResultado.Size = new Size(145, 25);
+            lblDniResultado.TabIndex = 2;
+            lblDniResultado.Text = "DNI del Paciente:";
+            //
             // Form1
-            // 
+            //
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(245, 247, 250);
@@ -409,8 +415,8 @@
         private ComboBox cmbHorarios;
         private Button btnSacarTurno;
         private GroupBox grpResultado;
-        private Label lblIdResultado;
-        private TextBox txtIdResultado;
+        private Label lblDniResultado;
+        private TextBox txtDniResultado;
         private Button btnRetirarResultado;
     }
 }
