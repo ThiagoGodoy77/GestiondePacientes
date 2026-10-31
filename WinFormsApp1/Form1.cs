@@ -1,82 +1,146 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using Microsoft.EntityFrameworkCore;
 
 namespace WinFormsApp1
 {
     public partial class Form1 : Form
     {
-        private readonly IGestorDeAtencion gestor;
-        private List<Estudio> catalogoEstudios;
+        private static readonly Color ColorExito = Color.FromArgb(39, 174, 96);
+        private static readonly Color ColorError = Color.FromArgb(192, 57, 43);
+
+        private IGestorDeAtencion gestor;
+        private List<Estudio> catalogoEstudios = new List<Estudio>();
+        private readonly DateTime fechaTurno = DateTime.Today.AddDays(1);
 
         public Form1()
         {
             InitializeComponent();
-            gestor = new GestorDeAtencion();
-            catalogoEstudios = new List<Estudio>();
-
-            CargarDatosSemilla();
-            ConfigurarInterfazInicial();
         }
+
+        // La inicialización va en OnLoad (y no en el constructor) para que no corra
+        // dentro del diseñador de Visual Studio ni congele la ventana al construirla.
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+
+            if (DesignMode)
+                return;
+
+            try
+            {
+                gestor = new GestorDeAtencion();   // crea la base si no existe
+                CargarDatosSemilla();
+
+                CargarEstudios();
+                ActualizarHorarios();
+            }
+            catch (Exception ex)
+            {
+                MostrarError("No se pudo inicializar la base de datos:\n\n" + ex.Message);
+            }
+        }
+
+        // ───────────────────────── Datos de prueba ─────────────────────────
 
         private void CargarDatosSemilla()
         {
             using var context = new CentroMedicoContext();
 
-            // 1. Catálogo de Estudios
+            // 1. Catalogo de estudios
             if (!context.Estudios.Any())
             {
-                context.Estudios.Add(new Estudio("Radiografía de Tórax", "Radiología General", "Dr. López", "Marta"));
-                context.Estudios.Add(new Estudio("Ecografía Abdominal", "Ultrasonografía", "Dra. Gómez", "Luis"));
-                context.Estudios.Add(new Estudio("Análisis de Sangre Completo", "Laboratorio Central", "Dra. Martínez", "Carlos"));
+                context.Estudios.AddRange(
+                    new Estudio("Radiografía de Tórax", "Radiología General", "Dr. López", "Marta"),
+                    new Estudio("Ecografía Abdominal", "Ultrasonografía", "Dra. Gómez", "Luis"),
+                    new Estudio("Análisis de Sangre Completo", "Laboratorio Central", "Dra. Martínez", "Carlos"));
                 context.SaveChanges();
             }
 
-            catalogoEstudios = context.Estudios.ToList();
+            // 2. Pacientes de prueba
+            var pacienteRetirado = ObtenerOCrearPaciente(context, "12345678", "Juan", "Pérez");
+            var pacientePendiente = ObtenerOCrearPaciente(context, "87654321", "María", "Gómez");
+            context.SaveChanges();
 
-            // 2. Paciente de prueba
-            var pacienteTest = context.Pacientes.FirstOrDefault(p => p.Dni == "12345678");
-            if (pacienteTest == null)
-            {
-                pacienteTest = new Paciente("12345678", "Juan", "Pérez");
-                context.Pacientes.Add(pacienteTest);
-                context.SaveChanges();
-            }
-
-            // 3. Resultados Semilla
+            // 3. Resultados de prueba
             if (!context.Resultados.Any())
             {
-                var estudio = catalogoEstudios.First();
+                // Se toma el estudio desde este mismo contexto para que EF no intente insertarlo de nuevo.
+                var estudio = context.Estudios.OrderBy(x => x.Id).First();
 
-                var turno1 = new Turno(DateTime.Today.AddHours(9), pacienteTest, estudio);
-                context.Turnos.Add(turno1);
+                // Turnos del día anterior: el estudio ya "transcurrió" a cualquier hora
+                // y no choca con los horarios disponibles de mañana.
+                var ayer = DateTime.Today.AddDays(-1);
+
+                // Paciente 1: resultado ya retirado.
+                var turnoRetirado = new Turno(ayer.AddHours(9), pacienteRetirado, estudio);
+                var resultadoRetirado = new Resultado(turnoRetirado, disponible: true);
+                resultadoRetirado.MarcarComoRetirado();
+
+                // Paciente 2: resultado disponible, pendiente de retiro.
+                var turnoPendiente = new Turno(ayer.AddHours(11), pacientePendiente, estudio);
+                var resultadoPendiente = new Resultado(turnoPendiente, disponible: true);
+
+                context.Turnos.AddRange(turnoRetirado, turnoPendiente);
+                context.Resultados.AddRange(resultadoRetirado, resultadoPendiente);
                 context.SaveChanges();
+            }
 
-                var res1 = new Resultado(turno1, disponible: true);
-                context.Resultados.Add(res1);
+            catalogoEstudios = context.Estudios.AsNoTracking().OrderBy(x => x.Id).ToList();
+        }
 
-                var turno2 = new Turno(DateTime.Today.AddHours(10), pacienteTest, estudio);
-                context.Turnos.Add(turno2);
-                context.SaveChanges();
+        private static Paciente ObtenerOCrearPaciente(CentroMedicoContext context, string dni, string nombre, string apellido)
+        {
+            var paciente = context.Pacientes.FirstOrDefault(p => p.Dni == dni);
+            if (paciente == null)
+            {
+                paciente = new Paciente(dni, nombre, apellido);
+                context.Pacientes.Add(paciente);
+            }
+            return paciente;
+        }
 
-                var res2 = new Resultado(turno2, disponible: true);
-                res2.MarcarComoRetirado();
-                context.Resultados.Add(res2);
+        // ───────────────────────── Interfaz ─────────────────────────
 
-                context.SaveChanges();
+        private void CargarEstudios()
+        {
+            cmbEstudios.DisplayMember = "Nombre";
+            cmbEstudios.DataSource = catalogoEstudios;
+        }
+
+        private void ActualizarHorarios()
+        {
+            cmbHorarios.FormattingEnabled = true;
+            cmbHorarios.FormatString = "HH:mm";
+            cmbHorarios.DataSource = gestor.ObtenerHorariosDisponibles(fechaTurno);
+        }
+
+        private void MostrarTurno(string dni)
+        {
+            var turnos = gestor.ConsultarTurnos(dni);
+
+            if (turnos != null && turnos.Any())
+            {
+                var primerTurno = turnos.First();
+
+                // Concatena los nombres de los estudios si tiene mas de uno asignado
+                string nombresEstudios = string.Join(" y ", turnos.Select(t => t.Estudio.Nombre));
+
+                lblResultadoConsulta.Text =
+                    $"Turno: {primerTurno.FechaHora:dd/MM HH:mm} hs - {nombresEstudios} | Paciente: {primerTurno.Paciente.NombreCompleto}";
+                lblResultadoConsulta.ForeColor = ColorExito;
+            }
+            else
+            {
+                lblResultadoConsulta.Text = "No se encontraron turnos próximos para el DNI ingresado.";
+                lblResultadoConsulta.ForeColor = ColorError;
             }
         }
 
-        private void ConfigurarInterfazInicial()
-        {
-            cmbEstudios.DataSource = catalogoEstudios;
-            cmbEstudios.DisplayMember = "Nombre";
-
-            DateTime fechaBase = DateTime.Today.AddDays(1);
-            cmbHorarios.DataSource = gestor.ObtenerHorariosDisponibles(fechaBase);
-            cmbHorarios.FormatString = "HH:mm";
-        }
+        // ───────────────────────── Consultar turno ─────────────────────────
 
         private void btnConsultarTurno_Click(object sender, EventArgs e)
         {
@@ -87,10 +151,17 @@ namespace WinFormsApp1
                 return;
             }
 
-            var turno = gestor.ConsultarTurno(dniBusqueda);
-            if (turno != null)
+            // l nuevo metodo que devuelve una lista
+            var turnos = gestor.ConsultarTurnos(dniBusqueda);
+
+            if (turnos != null && turnos.Any())
             {
-                lblResultadoConsulta.Text = $"Turno: {turno.FechaHora:HH:mm} hs - {turno.Estudio.Nombre} | Paciente: {turno.Paciente.NombreCompleto}";
+                var primerTurno = turnos.First();
+
+                // Unimos todos los nombres de los estudios con " y "
+                string nombresEstudios = string.Join(" y ", turnos.Select(t => t.Estudio.Nombre));
+
+                lblResultadoConsulta.Text = $"Turno: {primerTurno.FechaHora:dd/MM HH:mm} hs - {nombresEstudios} | Paciente: {primerTurno.Paciente.NombreCompleto}";
                 lblResultadoConsulta.ForeColor = System.Drawing.Color.FromArgb(39, 174, 96);
             }
             else
@@ -100,78 +171,140 @@ namespace WinFormsApp1
             }
         }
 
+        // ───────────────────────── Sacar turno ─────────────────────────
+
         private void btnSacarTurno_Click(object sender, EventArgs e)
         {
-            string dni = txtDniTurno.Text.Trim();
             string nombre = txtNombreTurno.Text.Trim();
             string apellido = txtApellidoTurno.Text.Trim();
 
-            if (string.IsNullOrWhiteSpace(dni) || string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(apellido))
+            if (!TryObtenerDni(txtDniTurno.Text, out var dni))
+                return;
+
+            if (nombre.Length == 0 || apellido.Length == 0)
             {
-                MessageBox.Show("Por favor, complete los datos del paciente (DNI, Nombre y Apellido).", "Atención", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MostrarAdvertencia("Por favor, complete el nombre y el apellido del paciente.");
                 return;
             }
 
-            if (cmbEstudios.SelectedItem == null || cmbHorarios.SelectedItem == null)
+            if (cmbEstudios.SelectedItem is not Estudio estudio || cmbHorarios.SelectedItem is not DateTime horario)
             {
-                MessageBox.Show("Seleccione un estudio médico y un horario disponible.", "Atención", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MostrarAdvertencia("Seleccione un estudio médico y un horario disponible.");
                 return;
             }
 
             try
             {
                 var paciente = new Paciente(dni, nombre, apellido);
-                var estudio = (Estudio)cmbEstudios.SelectedItem;
-                var horario = (DateTime)cmbHorarios.SelectedItem;
-
                 gestor.SacarTurno(paciente, estudio, horario);
 
-                MessageBox.Show($"Turno registrado exitosamente para {paciente.NombreCompleto} a las {horario:HH:mm} hs.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MostrarInformacion($"Turno registrado exitosamente para {paciente.NombreCompleto} el {horario:dd/MM} a las {horario:HH:mm} hs.");
 
+                LimpiarFormularioDeTurno();
                 txtDniConsulta.Text = dni;
-                ConfigurarInterfazInicial();
+                MostrarTurno(dni);
+                ActualizarHorarios();
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Errores esperados de negocio (horario ocupado, fuera de horario, etc.).
+                MostrarAdvertencia(ex.Message);
+                ActualizarHorarios();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MostrarError("Ocurrió un error inesperado al registrar el turno:\n\n" + ex.Message);
             }
         }
+
+        private void LimpiarFormularioDeTurno()
+        {
+            txtDniTurno.Clear();
+            txtNombreTurno.Clear();
+            txtApellidoTurno.Clear();
+            txtDniTurno.Focus();
+        }
+
+        // ───────────────────────── Retirar resultado ─────────────────────────
 
         private void btnRetirarResultado_Click(object sender, EventArgs e)
         {
-            if (!int.TryParse(txtIdResultado.Text.Trim(), out int idResultado))
-            {
-                MessageBox.Show("Ingrese un número válido para el ID del resultado.", "Atención", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            if (!TryObtenerDni(txtDniResultado.Text, out var dni))
                 return;
-            }
 
             try
             {
-                if (gestor.RegistrarRetiroResultado(idResultado))
+                // 1. Buscar un estudio realizado con resultado pendiente de retiro.
+                var resultado = gestor.ConsultarResultadoPendientePorDni(dni);
+
+                if (resultado == null)
                 {
-                    MessageBox.Show($"Resultado #{idResultado} retirado y registrado exitosamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    txtIdResultado.Clear();
+                    MessageBox.Show(
+                        $"No se encontró ningún estudio realizado pendiente de retiro para el DNI #{dni}.\n\n" +
+                        "Verifique que el paciente tenga un turno registrado y que la fecha de atención ya haya transcurrido.",
+                        "Resultado no disponible",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
                 }
+
+                // 2. Confirmar con los datos reales antes de entregar.
+                var turno = resultado.TurnoAsociado;
+                var confirmacion = MessageBox.Show(
+                    "Se encontró un resultado listo para entregar:\n\n" +
+                    $"• Paciente: {turno.Paciente.NombreCompleto} (DNI: {turno.Paciente.Dni})\n" +
+                    $"• Estudio: {turno.Estudio.Nombre}\n" +
+                    $"• Fecha de atención: {turno.FechaHora:dd/MM/yyyy HH:mm} hs\n\n" +
+                    "¿Desea confirmar la entrega y registrar el retiro?",
+                    "Confirmar retiro",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (confirmacion != DialogResult.Yes)
+                    return;
+
+                // 3. Registrar el retiro.
+                gestor.RegistrarRetiroResultado(resultado.Id);
+                MostrarInformacion($"El retiro del resultado de {turno.Paciente.NombreCompleto} fue registrado exitosamente.");
+                txtDniResultado.Clear();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message, "Atención / Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MostrarError(ex.Message);
             }
         }
 
-        private void lblSubtitle_Click(object sender, EventArgs e)
-        {
+        // ───────────────────────── Helpers ─────────────────────────
 
+        /// <summary>
+        /// Normaliza y valida el DNI. Si no es válido, avisa al usuario y devuelve false. -sacado de ia 
+        /// </summary>
+        private bool TryObtenerDni(string textoIngresado, out string dni)
+        {
+            dni = GestorDeAtencion.NormalizarDni(textoIngresado);
+
+            if (dni.Length == 0)
+            {
+                MostrarAdvertencia("Por favor, ingrese un número de DNI.");
+                return false;
+            }
+
+            if (!GestorDeAtencion.EsDniValido(dni))
+            {
+                MostrarAdvertencia("El DNI debe tener 7 u 8 dígitos.");
+                return false;
+            }
+
+            return true;
         }
 
-        private void grpConsulta_Enter(object sender, EventArgs e)
-        {
+        private static void MostrarAdvertencia(string mensaje) =>
+            MessageBox.Show(mensaje, "Atención", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
-        }
+        private static void MostrarError(string mensaje) =>
+            MessageBox.Show(mensaje, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-        private void lblTitle_Click(object sender, EventArgs e)
-        {
-
-        }
+        private static void MostrarInformacion(string mensaje) =>
+            MessageBox.Show(mensaje, "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 }
