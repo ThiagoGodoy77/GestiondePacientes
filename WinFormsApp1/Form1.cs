@@ -14,7 +14,7 @@ namespace WinFormsApp1
 
         private IGestorDeAtencion gestor;
         private List<Estudio> catalogoEstudios = new List<Estudio>();
-        private readonly DateTime fechaTurno = DateTime.Today.AddDays(1);
+        private DateTime fechaTurno = DateTime.Today.AddDays(1);
 
         public Form1()
         {
@@ -36,6 +36,7 @@ namespace WinFormsApp1
                 CargarDatosSemilla();
 
                 CargarEstudios();
+                ActualizarFechaTurno();
                 ActualizarHorarios();
             }
             catch (Exception ex)
@@ -118,25 +119,41 @@ namespace WinFormsApp1
             cmbHorarios.DataSource = gestor.ObtenerHorariosDisponibles(fechaTurno);
         }
 
+        private void ActualizarFechaTurno()
+        {
+            txtFechaTurno.Text = fechaTurno.ToString("dd/MM/yyyy");
+        }
+
+        private void btnSeleccionarFecha_Click(object? sender, EventArgs e)
+        {
+            using var ventanaFecha = new SeleccionarFechaForm(fechaTurno);
+
+            if (ventanaFecha.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            fechaTurno = ventanaFecha.FechaSeleccionada;
+            ActualizarFechaTurno();
+            ActualizarHorarios();
+        }
+
         private void MostrarTurno(string dni)
         {
             var turnos = gestor.ConsultarTurnos(dni);
 
             if (turnos != null && turnos.Any())
             {
-                var primerTurno = turnos.First();
+                string turnosTexto = string.Join(
+                    Environment.NewLine,
+                    turnos.Select(t => $"Turno: {t.FechaHora:dd/MM HH:mm} hs - {t.Estudio.Nombre}"));
 
-                // Concatena los nombres de los estudios si tiene mas de uno asignado
-                string nombresEstudios = string.Join(" y ", turnos.Select(t => t.Estudio.Nombre));
-
-                lblResultadoConsulta.Text =
-                    $"Turno: {primerTurno.FechaHora:dd/MM HH:mm} hs - {nombresEstudios} | Paciente: {primerTurno.Paciente.NombreCompleto}";
-                lblResultadoConsulta.ForeColor = ColorExito;
+                using var ventana = new ConsultaTurnosForm(
+                    turnos.First().Paciente.NombreCompleto,
+                    turnos.Select(t => $"{t.FechaHora:dd/MM HH:mm} hs - {t.Estudio.Nombre}").ToList());
+                ventana.ShowDialog(this);
             }
             else
             {
-                lblResultadoConsulta.Text = "No se encontraron turnos próximos para el DNI ingresado.";
-                lblResultadoConsulta.ForeColor = ColorError;
+                MostrarAdvertencia("No se encontraron turnos próximos para el DNI ingresado.");
             }
         }
 
@@ -151,24 +168,7 @@ namespace WinFormsApp1
                 return;
             }
 
-            // l nuevo metodo que devuelve una lista
-            var turnos = gestor.ConsultarTurnos(dniBusqueda);
-
-            if (turnos != null && turnos.Any())
-            {
-                var primerTurno = turnos.First();
-
-                // Unimos todos los nombres de los estudios con " y "
-                string nombresEstudios = string.Join(" y ", turnos.Select(t => t.Estudio.Nombre));
-
-                lblResultadoConsulta.Text = $"Turno: {primerTurno.FechaHora:dd/MM HH:mm} hs - {nombresEstudios} | Paciente: {primerTurno.Paciente.NombreCompleto}";
-                lblResultadoConsulta.ForeColor = System.Drawing.Color.FromArgb(39, 174, 96);
-            }
-            else
-            {
-                lblResultadoConsulta.Text = "No se encontraron turnos próximos para el DNI ingresado.";
-                lblResultadoConsulta.ForeColor = System.Drawing.Color.FromArgb(192, 57, 43);
-            }
+            MostrarTurno(dniBusqueda);
         }
 
         // ───────────────────────── Sacar turno ─────────────────────────

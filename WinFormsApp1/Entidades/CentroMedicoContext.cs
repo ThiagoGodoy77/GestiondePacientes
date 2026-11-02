@@ -20,6 +20,14 @@ namespace WinFormsApp1
             modelBuilder.Entity<Estudio>().HasKey(e => e.Id);
             modelBuilder.Entity<Turno>().HasKey(t => t.Id);
             modelBuilder.Entity<Resultado>().HasKey(r => r.Id);
+            modelBuilder.Entity<Resultado>()
+                .HasOne(r => r.TurnoAsociado)
+                .WithMany()
+                .HasForeignKey(r => r.TurnoId)
+                .IsRequired();
+            modelBuilder.Entity<Resultado>()
+                .Property(r => r.TurnoId)
+                .HasColumnName("TurnoAsociadoId");
         }
     }
 }
