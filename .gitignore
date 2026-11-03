@@ -1,1 +1,58 @@
-.vs/ 
+# .gitignore del proyecto
+# Esto evita subir al repo archivos que se generan solos al compilar
+# o que son propios de la compu de cada uno, no del código en sí.
+
+# -------------------------------------------------------------------
+# Carpetas que Visual Studio/dotnet regenera cada vez que compilás
+# -------------------------------------------------------------------
+# No tiene sentido versionarlas: se recrean solas con un build.
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+
+# -------------------------------------------------------------------
+# Configuración y caché local de Visual Studio
+# -------------------------------------------------------------------
+# Esto es propio de cada máquina (ventanas abiertas, breakpoints, etc).
+# Si lo subimos, cada uno pisaría la config del otro sin querer.
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# -------------------------------------------------------------------
+# Base de datos local (SQLite)
+# -------------------------------------------------------------------
+# Cada uno corre el proyecto con su propia base de datos de prueba.
+# Si se sube, un compañero podría pisar sus datos con los de otro,
+# o terminar con datos de prueba viejos en el repo.
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# -------------------------------------------------------------------
+# Paquetes NuGet
+# -------------------------------------------------------------------
+# Se descargan solos al restaurar el proyecto, no hace falta subirlos.
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+# -------------------------------------------------------------------
+# Resultados de las pruebas (dotnet test)
+# -------------------------------------------------------------------
+# Cada corrida de "dotnet test" puede generar esta carpeta con los
+# reportes/logs de esa ejecución puntual. No aporta nada versionarla.
+TestResults/
+
+# -------------------------------------------------------------------
+# Archivos que genera el sistema operativo
+# -------------------------------------------------------------------
+# No tienen nada que ver con el proyecto, los crea Windows/Mac solo.
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store
