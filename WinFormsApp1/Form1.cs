@@ -4,6 +4,8 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using Microsoft.EntityFrameworkCore;
+using WinFormsApp1.Datos;
+//using WinFormsApp1.Servicios;
 
 namespace WinFormsApp1
 {
