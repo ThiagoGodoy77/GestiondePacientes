@@ -2,8 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using WinFormsApp1;
-using WinFormsApp1.Datos;
+using WinFormsApp1.CentroMedico.Business.Servicios;
+using WinFormsApp1.CentroMedico.Data.Datos;
+using WinFormsApp1.CentroMedico.Data.Entidades;
 using Xunit;
 
 // Evita la ejecución paralela para que las pruebas de SQLite no interfieran entre sí
@@ -12,14 +13,47 @@ using Xunit;
 namespace GestionPacientes.Tests
 {
     // =========================================================================
+    // DATOS DE PRUEBA COMPARTIDOS
+    // Cada test crea sus propias instancias: nada estático, nada compartido.
+    // =========================================================================
+    internal static class TestData
+    {
+        public const string DniPaciente = "12345678";
+        public const string NombreEstudio = "Radiografia de Torax";
+
+        public static Paciente NuevoPaciente(string dni = DniPaciente, string nombre = "Juan", string apellido = "Perez")
+            => new Paciente(dni, nombre, apellido);
+
+        public static Estudio NuevoEstudio(string nombre = NombreEstudio, string descripcion = "RX",
+                                           string profesional = "Dr. Lopez", string asistente = "Asist. Marta")
+            => new Estudio(nombre, descripcion, profesional, asistente);
+
+        public static Turno NuevoTurno(DateTime? fechaHora = null)
+            => new Turno(fechaHora ?? DateTime.Today.AddHours(10), NuevoPaciente(), NuevoEstudio());
+
+        public static Resultado NuevoResultado(bool disponible)
+            => new Resultado(NuevoTurno(), disponible);
+    }
+
+    // =========================================================================
     // 1. PACIENTE
     // =========================================================================
     public class PacienteTests
     {
         [Fact]
-        public void CasoNormal_CrearYActualizarDatos_GuardaLosCambiosCorrectamente()
+        public void CasoNormal_Crear_GuardaDniNombreYApellido()
         {
-            var paciente = new Paciente("12345678", "Juan", "Perez");
+            var paciente = TestData.NuevoPaciente();
+
+            Assert.Equal("12345678", paciente.Dni);
+            Assert.Equal("Juan Perez", paciente.NombreCompleto);
+        }
+
+        [Fact]
+        public void CasoNormal_ActualizarDatosPersonales_CambiaNombreYNoTocaElDni()
+        {
+            var paciente = TestData.NuevoPaciente();
+
             paciente.ActualizarDatosPersonales("Carlos", "Gomez");
 
             Assert.Equal("12345678", paciente.Dni);
@@ -29,19 +63,17 @@ namespace GestionPacientes.Tests
         [Fact]
         public void CasoBorde_ApellidoVacio_SePermiteCrearElPaciente()
         {
-            // NOTA: la única validación obligatoria del paciente es el DNI (ver caso error).
-            // El nombre y el apellido no son obligatorios, así que un apellido vacío
-            // es un valor límite válido, no un error. Si al correrlo falla, es señal
-            // de que Paciente sí exige apellido y hay que ajustar este caso borde.
-            var paciente = new Paciente("12345678", "Juan", "");
+            var paciente = TestData.NuevoPaciente(apellido: "");
 
             Assert.Equal("", paciente.Apellido);
         }
 
-        [Fact]
-        public void CasoError_DniVacio_LanzaArgumentException()
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void CasoError_DniVacioOSoloEspacios_LanzaArgumentException(string dni)
         {
-            Assert.Throws<ArgumentException>(() => new Paciente("   ", "Juan", "Perez"));
+            Assert.Throws<ArgumentException>(() => TestData.NuevoPaciente(dni: dni));
         }
     }
 
@@ -51,9 +83,9 @@ namespace GestionPacientes.Tests
     public class EstudioTests
     {
         [Fact]
-        public void CasoNormal_CrearEstudio_GuardaTodosLosDatosCorrectamente()
+        public void CasoNormal_Crear_GuardaTodosLosDatos()
         {
-            var estudio = new Estudio("Radiografia", "RX de torax", "Dr. Lopez", "Asist. Marta");
+            var estudio = TestData.NuevoEstudio("Radiografia", "RX de torax", "Dr. Lopez", "Asist. Marta");
 
             Assert.Equal("Radiografia", estudio.Nombre);
             Assert.Equal("RX de torax", estudio.Descripcion);
@@ -64,15 +96,17 @@ namespace GestionPacientes.Tests
         [Fact]
         public void CasoBorde_DescripcionVacia_SePermiteCrearElEstudio()
         {
-            var estudio = new Estudio("Ecografia", "", "Dra. Gomez", "Asist. Luis");
+            var estudio = TestData.NuevoEstudio(descripcion: "");
 
             Assert.Equal("", estudio.Descripcion);
         }
 
-        [Fact]
-        public void CasoError_NombreVacio_LanzaArgumentException()
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void CasoError_NombreVacioOSoloEspacios_LanzaArgumentException(string nombre)
         {
-            Assert.Throws<ArgumentException>(() => new Estudio("", "RX", "Dr. Lopez", "Asist. Marta"));
+            Assert.Throws<ArgumentException>(() => TestData.NuevoEstudio(nombre: nombre));
         }
     }
 
@@ -81,35 +115,35 @@ namespace GestionPacientes.Tests
     // =========================================================================
     public class TurnoTests
     {
-        private static readonly Paciente Pac = new Paciente("12345678", "Juan", "Perez");
-        private static readonly Estudio Est = new Estudio("Radiografia", "RX", "Dr. Lopez", "Asist. Marta");
-
         [Fact]
-        public void CasoNormal_CrearTurno_AsignaFechaPacienteYEstudioCorrectamente()
+        public void CasoNormal_Crear_AsignaFechaPacienteYEstudio()
         {
-            var turno = new Turno(DateTime.Today.AddHours(10), Pac, Est);
+            var paciente = TestData.NuevoPaciente();
+            var estudio = TestData.NuevoEstudio();
+            var fecha = DateTime.Today.AddHours(10);
 
-            Assert.Equal(DateTime.Today.AddHours(10), turno.FechaHora);
-            Assert.Equal(Pac, turno.Paciente);
-            Assert.Equal(Est, turno.Estudio);
+            var turno = new Turno(fecha, paciente, estudio);
+
+            Assert.Equal(fecha, turno.FechaHora);
+            Assert.Same(paciente, turno.Paciente);
+            Assert.Same(estudio, turno.Estudio);
         }
 
         [Fact]
         public void CasoBorde_FechaPasada_SePermiteCrearElTurnoDirectamente()
         {
-            // NOTA: quien rechaza fechas pasadas es GestorDeAtencion.SacarTurno(), no el
-            // propio Turno (así lo usa el gestor para guardar resultados de turnos ya
-            // ocurridos). Por eso crear un Turno "a mano" con una fecha de ayer es un
-            // caso límite válido para esta clase.
-            var turno = new Turno(DateTime.Today.AddDays(-1), Pac, Est);
+            // La validación de fechas pasadas es responsabilidad del gestor, no de la entidad.
+            var ayer = DateTime.Today.AddDays(-1);
 
-            Assert.Equal(DateTime.Today.AddDays(-1), turno.FechaHora);
+            var turno = TestData.NuevoTurno(ayer);
+
+            Assert.Equal(ayer, turno.FechaHora);
         }
 
         [Fact]
         public void CasoError_PacienteNulo_LanzaArgumentNullException()
         {
-            Assert.Throws<ArgumentNullException>(() => new Turno(DateTime.Now, null, Est));
+            Assert.Throws<ArgumentNullException>(() => new Turno(DateTime.Now, null, TestData.NuevoEstudio()));
         }
     }
 
@@ -118,16 +152,10 @@ namespace GestionPacientes.Tests
     // =========================================================================
     public class ResultadoTests
     {
-        private static readonly Paciente Pac = new Paciente("12345678", "Juan", "Perez");
-        private static readonly Estudio Est = new Estudio("Radiografia", "RX", "Dr. Lopez", "Asist. Marta");
-
-        private static Resultado NuevoResultado(bool disponible) =>
-            new Resultado(new Turno(DateTime.Today.AddHours(10), Pac, Est), disponible);
-
         [Fact]
-        public void CasoNormal_MarcarComoRetirado_CambiaElEstadoCorrectamente()
+        public void CasoNormal_MarcarComoRetirado_CambiaElEstado()
         {
-            var resultado = NuevoResultado(disponible: true);
+            var resultado = TestData.NuevoResultado(disponible: true);
 
             resultado.MarcarComoRetirado();
 
@@ -135,9 +163,9 @@ namespace GestionPacientes.Tests
         }
 
         [Fact]
-        public void CasoBorde_ResultadoReciénCreado_TodaviaNoEstaRetirado()
+        public void CasoBorde_ResultadoRecienCreado_NoEstaRetirado()
         {
-            var resultado = NuevoResultado(disponible: false);
+            var resultado = TestData.NuevoResultado(disponible: false);
 
             Assert.False(resultado.Disponible);
             Assert.False(resultado.Retirado);
@@ -146,7 +174,7 @@ namespace GestionPacientes.Tests
         [Fact]
         public void CasoError_MarcarComoRetiradoDosVeces_LanzaInvalidOperationException()
         {
-            var resultado = NuevoResultado(disponible: true);
+            var resultado = TestData.NuevoResultado(disponible: true);
             resultado.MarcarComoRetirado();
 
             Assert.Throws<InvalidOperationException>(() => resultado.MarcarComoRetirado());
@@ -155,14 +183,16 @@ namespace GestionPacientes.Tests
         [Fact]
         public void CasoError_MarcarComoRetiradoSinEstarDisponible_LanzaInvalidOperationException()
         {
-            Assert.Throws<InvalidOperationException>(() => NuevoResultado(disponible: false).MarcarComoRetirado());
+            var resultado = TestData.NuevoResultado(disponible: false);
+
+            Assert.Throws<InvalidOperationException>(() => resultado.MarcarComoRetirado());
         }
     }
 
     // =========================================================================
     // 5. GESTOR DE ATENCION (integración con base de datos SQLite)
     // =========================================================================
-    public class GestorDeAtencionTests
+    public class GestorDeAtencionTests : IDisposable
     {
         private readonly GestorDeAtencion _gestor;
         private readonly Paciente _paciente;
@@ -175,15 +205,27 @@ namespace GestionPacientes.Tests
                 context.Database.EnsureDeleted();
                 context.Database.EnsureCreated();
 
-                _estudio = new Estudio("Radiografia de Torax", "RX", "Dr. Lopez", "Asist. Marta");
+                _estudio = TestData.NuevoEstudio();
                 context.Estudios.Add(_estudio);
                 context.SaveChanges();
             }
 
             _gestor = new GestorDeAtencion();
-            _paciente = new Paciente("12345678", "Juan", "Perez");
+            _paciente = TestData.NuevoPaciente();
             _gestor.RegistrarPaciente(_paciente);
         }
+
+        // xUnit crea una instancia por test y llama a Dispose al terminar:
+        // la base de prueba no queda en disco entre ejecuciones.
+        public void Dispose()
+        {
+            using var context = new CentroMedicoContext();
+            context.Database.EnsureDeleted();
+        }
+
+        // ---------------------------------------------------------------------
+        // Helpers
+        // ---------------------------------------------------------------------
 
         private static DateTime Manana(int hora, int minutos = 0) =>
             DateTime.Today.AddDays(1).AddHours(hora).AddMinutes(minutos);
@@ -209,11 +251,20 @@ namespace GestionPacientes.Tests
         // ---------------------------------------------------------------------
 
         [Fact]
-        public void CasoNormal_RegistrarPaciente_ActualizaDatosYAceptaDniConPuntos()
+        public void CasoNormal_RegistrarPacienteExistente_ActualizaSusDatos()
         {
-            _gestor.RegistrarPaciente(new Paciente("12345678", "Carlos", "Gomez"));
+            _gestor.RegistrarPaciente(TestData.NuevoPaciente(nombre: "Carlos", apellido: "Gomez"));
 
-            Assert.Equal("Carlos Gomez", _gestor.ConsultarPaciente("12.345.678").NombreCompleto);
+            Assert.Equal("Carlos Gomez", _gestor.ConsultarPaciente(TestData.DniPaciente).NombreCompleto);
+        }
+
+        [Fact]
+        public void CasoNormal_ConsultarPaciente_AceptaDniConPuntos()
+        {
+            Paciente encontrado = _gestor.ConsultarPaciente("12.345.678");
+
+            Assert.NotNull(encontrado);
+            Assert.Equal(TestData.DniPaciente, encontrado.Dni);
         }
 
         [Fact]
@@ -227,26 +278,54 @@ namespace GestionPacientes.Tests
         // ---------------------------------------------------------------------
 
         [Fact]
-        public void CasoNormal_SacarTurno_ConPacienteExistenteYNuevo()
+        public void CasoNormal_SacarTurno_ConPacienteExistente_AsignaLaFechaPedida()
         {
             Turno turno = _gestor.SacarTurno(_paciente, _estudio, Manana(10));
-            _gestor.SacarTurno(new Paciente("87654321", "Maria", "Gomez"), _estudio, Manana(11));
 
             Assert.Equal(Manana(10), turno.FechaHora);
+        }
+
+        [Fact]
+        public void CasoNormal_SacarTurno_ConPacienteNuevo_LoRegistraAutomaticamente()
+        {
+            _gestor.SacarTurno(TestData.NuevoPaciente("87654321", "Maria", "Gomez"), _estudio, Manana(11));
+
             Assert.Equal("Maria Gomez", _gestor.ConsultarPaciente("87654321").NombreCompleto);
         }
 
         [Fact]
-        public void CasoNormal_SacarTurnoConEstudio_RegistraElNuevoYNoDuplicaElDeMismoNombre()
+        public void CasoNormal_SacarTurnoConEstudioNuevo_LoRegistra()
         {
-            var nuevo = new Estudio("Electrocardiograma", "ECG", "Dr. Ruiz", "Asist. Ana");
-            var mismoNombre = new Estudio("Radiografia de Torax", "RX", "Dr. Lopez", "Asist. Marta");
+            var nuevo = TestData.NuevoEstudio("Electrocardiograma", "ECG", "Dr. Ruiz", "Asist. Ana");
 
             _gestor.SacarTurno(_paciente, nuevo, Manana(10));
-            _gestor.SacarTurno(_paciente, mismoNombre, Manana(11));
 
             using var context = new CentroMedicoContext();
             Assert.Equal(2, context.Estudios.Count());
+        }
+
+        [Fact]
+        public void CasoNormal_SacarTurnoConEstudioDeMismoNombre_NoLoDuplica()
+        {
+            var mismoNombre = TestData.NuevoEstudio();
+
+            _gestor.SacarTurno(_paciente, mismoNombre, Manana(11));
+
+            using var context = new CentroMedicoContext();
+            Assert.Single(context.Estudios);
+        }
+
+        [Theory]
+        [InlineData(1, 8, 0)]    // Primer bloque del día
+        [InlineData(1, 12, 30)]  // Bloque intermedio
+        [InlineData(1, 17, 30)]  // Último bloque del día
+        public void CasoBorde_SacarTurnoEnBloqueValido_NoLanzaExcepcion(int dias, int hora, int minutos)
+        {
+            var fechaHora = DateTime.Today.AddDays(dias).AddHours(hora).AddMinutes(minutos);
+
+            Turno turno = _gestor.SacarTurno(_paciente, _estudio, fechaHora);
+
+            Assert.Equal(fechaHora, turno.FechaHora);
         }
 
         [Theory]
@@ -254,7 +333,7 @@ namespace GestionPacientes.Tests
         [InlineData(1, 7, 30)]    // Antes de abrir (08:00)
         [InlineData(1, 18, 0)]    // Hora de cierre
         [InlineData(1, 10, 15)]   // Fuera de bloque de 30 min
-        public void CasoBorde_SacarTurnoEnHorarioLimite_LanzaInvalidOperationException(int dias, int hora, int minutos)
+        public void CasoBorde_SacarTurnoEnHorarioInvalido_LanzaInvalidOperationException(int dias, int hora, int minutos)
         {
             var fechaHora = DateTime.Today.AddDays(dias).AddHours(hora).AddMinutes(minutos);
 
@@ -270,36 +349,69 @@ namespace GestionPacientes.Tests
         }
 
         [Fact]
-        public void CasoError_SacarTurnoSinPacienteOSinEstudio_LanzaArgumentNullException()
+        public void CasoError_SacarTurnoSinPaciente_LanzaArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => _gestor.SacarTurno(null, _estudio, Manana(10)));
+        }
+
+        [Fact]
+        public void CasoError_SacarTurnoSinEstudio_LanzaArgumentNullException()
+        {
             Assert.Throws<ArgumentNullException>(() => _gestor.SacarTurno(_paciente, null, Manana(10)));
         }
 
         [Fact]
-        public void CasoNormal_ObtenerHorariosDisponibles_DiaLibreTieneVeinteTurnosYExcluyeLosOcupados()
+        public void CasoNormal_ObtenerHorariosDisponibles_DiaLibreTieneVeinteBloquesDe0800A1730()
         {
             List<DateTime> libres = _gestor.ObtenerHorariosDisponibles(Manana(0));
-            _gestor.SacarTurno(_paciente, _estudio, Manana(8));
-            List<DateTime> conOcupado = _gestor.ObtenerHorariosDisponibles(Manana(0));
 
             Assert.Equal(20, libres.Count);
+            Assert.Equal(Manana(8), libres.First());
             Assert.Equal(Manana(17, 30), libres.Last());
+        }
+
+        [Fact]
+        public void CasoNormal_ObtenerHorariosDisponibles_ExcluyeSoloElBloqueOcupado()
+        {
+            _gestor.SacarTurno(_paciente, _estudio, Manana(8));
+
+            List<DateTime> conOcupado = _gestor.ObtenerHorariosDisponibles(Manana(0));
+
+            Assert.Equal(19, conOcupado.Count);
             Assert.DoesNotContain(Manana(8), conOcupado);
             Assert.Contains(Manana(8, 30), conOcupado);
         }
 
         [Fact]
-        public void CasoNormal_ConsultarTurnos_DevuelveSoloLosDelPacienteOrdenadosYSinLosPasados()
+        public void CasoBorde_ObtenerHorariosDisponibles_DiaCompletoOcupado_DevuelveListaVacia()
+        {
+            for (int i = 0; i < 20; i++)
+                _gestor.SacarTurno(_paciente, _estudio, Manana(8, 30 * i));
+
+            Assert.Empty(_gestor.ObtenerHorariosDisponibles(Manana(0)));
+        }
+
+        [Fact]
+        public void CasoNormal_ConsultarTurnos_DevuelveSoloLosDelPacienteYOrdenados()
         {
             _gestor.SacarTurno(_paciente, _estudio, Manana(14));
             _gestor.SacarTurno(_paciente, _estudio, Manana(9));
-            _gestor.SacarTurno(new Paciente("87654321", "Maria", "Gomez"), _estudio, Manana(10));
-            GuardarResultadoDirecto(dias: -1, disponible: true);
+            _gestor.SacarTurno(TestData.NuevoPaciente("87654321", "Maria", "Gomez"), _estudio, Manana(10));
 
             List<Turno> turnos = _gestor.ConsultarTurnos("12.345.678");
 
             Assert.Equal(new[] { Manana(9), Manana(14) }, turnos.Select(t => t.FechaHora));
+        }
+
+        [Fact]
+        public void CasoBorde_ConsultarTurnos_NoIncluyeLosTurnosPasados()
+        {
+            GuardarResultadoDirecto(dias: -1, disponible: true);
+            _gestor.SacarTurno(_paciente, _estudio, Manana(9));
+
+            List<Turno> turnos = _gestor.ConsultarTurnos(TestData.DniPaciente);
+
+            Assert.Equal(new[] { Manana(9) }, turnos.Select(t => t.FechaHora));
         }
 
         [Fact]
@@ -322,6 +434,17 @@ namespace GestionPacientes.Tests
             Assert.Equal(fechaManana.AddHours(15), pendientes[1].FechaHora);
         }
 
+        [Fact]
+        public void CasoBorde_ObtenerTurnosPendientesDelDia_IgnoraLosTurnosDeOtrosDias()
+        {
+            _gestor.SacarTurno(_paciente, _estudio, Manana(9));
+            _gestor.SacarTurno(_paciente, _estudio, Manana(9).AddDays(1));
+
+            List<Turno> pendientes = _gestor.ObtenerTurnosPendientesDelDia(DateTime.Today.AddDays(1));
+
+            Assert.Single(pendientes);
+        }
+
         // ---------------------------------------------------------------------
         // RESULTADOS
         // ---------------------------------------------------------------------
@@ -334,7 +457,7 @@ namespace GestionPacientes.Tests
             _gestor.RegistrarResultado(new Resultado(turno, disponible: true));
 
             using var context = new CentroMedicoContext();
-            Assert.Equal(1, context.Resultados.Count());
+            Assert.Single(context.Resultados);
         }
 
         [Fact]
@@ -353,37 +476,53 @@ namespace GestionPacientes.Tests
 
             Resultado pendiente = _gestor.ConsultarResultadoPendientePorDni("12.345.678");
 
+            Assert.NotNull(pendiente);
             Assert.Equal(id, pendiente.Id);
-            Assert.Equal("12345678", pendiente.TurnoAsociado.Paciente.Dni);
+            Assert.Equal(TestData.DniPaciente, pendiente.TurnoAsociado.Paciente.Dni);
         }
 
         [Theory]
-        [InlineData(1, true, false)]   // el estudio es mañana: todavía no se hizo
-        [InlineData(-1, true, true)]   // ya fue retirado
-        [InlineData(-1, false, false)] // el resultado no está disponible
+        [InlineData(1, true, false)]   // El estudio es mañana: todavía no se hizo
+        [InlineData(-1, true, true)]   // Ya fue retirado
+        [InlineData(-1, false, false)] // El resultado no está disponible
         public void CasoBorde_ConsultarResultadoPendiente_CasosQueNoEstanPendientes(int dias, bool disponible, bool retirado)
         {
             GuardarResultadoDirecto(dias, disponible, retirado);
 
-            Assert.Null(_gestor.ConsultarResultadoPendientePorDni("12345678"));
+            Assert.Null(_gestor.ConsultarResultadoPendientePorDni(TestData.DniPaciente));
         }
 
         [Fact]
-        public void CasoNormal_RegistrarRetiro_PorDniYPorId_DejaDePendienteElResultado()
+        public void CasoNormal_RegistrarRetiroPorDni_DejaDeEstarPendiente()
         {
             GuardarResultadoDirecto(dias: -1, disponible: true);
-            Assert.True(_gestor.RegistrarRetiroResultado("12345678"));
-            Assert.Null(_gestor.ConsultarResultadoPendientePorDni("12345678"));
 
-            int otroId = GuardarResultadoDirecto(dias: -2, disponible: true);
-            Assert.True(_gestor.RegistrarRetiroResultado(otroId));
-            Assert.Null(_gestor.ConsultarResultadoPendientePorDni("12345678"));
+            bool registrado = _gestor.RegistrarRetiroResultado(TestData.DniPaciente);
+
+            Assert.True(registrado);
+            Assert.Null(_gestor.ConsultarResultadoPendientePorDni(TestData.DniPaciente));
         }
 
         [Fact]
-        public void CasoError_RegistrarRetiroSinResultadoPendiente_LanzaKeyNotFoundException()
+        public void CasoNormal_RegistrarRetiroPorId_DejaDeEstarPendiente()
         {
-            Assert.Throws<KeyNotFoundException>(() => _gestor.RegistrarRetiroResultado("12345678"));
+            int id = GuardarResultadoDirecto(dias: -2, disponible: true);
+
+            bool registrado = _gestor.RegistrarRetiroResultado(id);
+
+            Assert.True(registrado);
+            Assert.Null(_gestor.ConsultarResultadoPendientePorDni(TestData.DniPaciente));
+        }
+
+        [Fact]
+        public void CasoError_RegistrarRetiroPorDniSinResultadoPendiente_LanzaKeyNotFoundException()
+        {
+            Assert.Throws<KeyNotFoundException>(() => _gestor.RegistrarRetiroResultado(TestData.DniPaciente));
+        }
+
+        [Fact]
+        public void CasoError_RegistrarRetiroPorIdInexistente_LanzaKeyNotFoundException()
+        {
             Assert.Throws<KeyNotFoundException>(() => _gestor.RegistrarRetiroResultado(9999));
         }
 
@@ -394,20 +533,21 @@ namespace GestionPacientes.Tests
         }
 
         // ---------------------------------------------------------------------
-        // ESTADÍSTICAS
+        // ESTADÍSTICAS (S5)
         // ---------------------------------------------------------------------
 
         [Fact]
         public void CasoNormal_ObtenerEstadisticasTurnosPorEstudio_DevuelveConteoCorrecto()
         {
-            var ecografia = new Estudio("Ecografia", "ECO", "Dra. Paz", "Luis");
+            var ecografia = TestData.NuevoEstudio("Ecografia", "ECO", "Dra. Paz", "Luis");
             _gestor.SacarTurno(_paciente, _estudio, Manana(9));
             _gestor.SacarTurno(_paciente, _estudio, Manana(10));
             _gestor.SacarTurno(_paciente, ecografia, Manana(11));
 
             Dictionary<string, int> estadisticas = _gestor.ObtenerEstadisticasTurnosPorEstudio();
 
-            Assert.Equal(2, estadisticas["Radiografia de Torax"]);
+            Assert.Equal(2, estadisticas.Count);
+            Assert.Equal(2, estadisticas[TestData.NombreEstudio]);
             Assert.Equal(1, estadisticas["Ecografia"]);
         }
 
@@ -422,7 +562,7 @@ namespace GestionPacientes.Tests
     }
 
     // =========================================================================
-    // UTILIDADES DE DNI (función auxiliar usada por GestorDeAtencion)
+    // UTILIDADES DE DNI
     // =========================================================================
     public class DniTests
     {
@@ -436,25 +576,21 @@ namespace GestionPacientes.Tests
         }
 
         [Theory]
-        [InlineData(null, "")]
-        [InlineData("abc", "")]
-        public void CasoBorde_NormalizarValorNoValido_DevuelveCadenaVacia(string ingresado, string esperado)
+        [InlineData(null)]
+        [InlineData("abc")]
+        public void CasoBorde_NormalizarValorNoValido_DevuelveCadenaVacia(string ingresado)
         {
-            Assert.Equal(esperado, GestorDeAtencion.NormalizarDni(ingresado));
+            Assert.Equal("", GestorDeAtencion.NormalizarDni(ingresado));
         }
 
         [Theory]
-        [InlineData("1234567", true)]
-        [InlineData("12345678", true)]
-        public void CasoNormal_EsValido_AceptaSieteUOchoDigitos(string dni, bool esperado)
-        {
-            Assert.Equal(esperado, GestorDeAtencion.EsDniValido(dni));
-        }
-
-        [Theory]
-        [InlineData("123456", false)]
-        [InlineData("123456789", false)]
-        public void CasoError_EsValido_RechazaCantidadDeDigitosIncorrecta(string dni, bool esperado)
+        [InlineData("1234567", true)]    // 7 dígitos: límite inferior
+        [InlineData("12345678", true)]   // 8 dígitos: límite superior
+        [InlineData("123456", false)]    // uno menos que el mínimo
+        [InlineData("123456789", false)] // uno más que el máximo
+        [InlineData("", false)]          // supuesto: vacío no es válido (verificar contra EsDniValido)
+        [InlineData("abcdefgh", false)]  // supuesto: letras no son válidas (verificar contra EsDniValido)
+        public void EsDniValido_AceptaSoloSieteUOchoDigitos(string dni, bool esperado)
         {
             Assert.Equal(esperado, GestorDeAtencion.EsDniValido(dni));
         }
