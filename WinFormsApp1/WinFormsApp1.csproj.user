@@ -1,13 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Compile Update="ConsultaTurnosForm.cs">
+    <Compile Update="CentroMedico.WinForms\Forms\ConsultaTurnosForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="Form1.cs">
+    <Compile Update="CentroMedico.WinForms\Forms\EstadisticasForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="SeleccionarFechaForm.cs">
+    <Compile Update="CentroMedico.WinForms\Forms\Form1.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="CentroMedico.WinForms\Forms\PinForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="CentroMedico.WinForms\Forms\SeleccionarFechaForm.cs">
       <SubType>Form</SubType>
     </Compile>
   </ItemGroup>

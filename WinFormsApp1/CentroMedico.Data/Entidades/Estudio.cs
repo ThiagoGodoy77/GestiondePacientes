@@ -1,6 +1,6 @@
 using System;
 
-namespace WinFormsApp1
+namespace WinFormsApp1.CentroMedico.Data.Entidades
 {
     public class Estudio
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace WinFormsApp1
+namespace WinFormsApp1.CentroMedico.Data.Entidades
 {
     public class Resultado
     {
@@ -23,7 +23,7 @@ namespace WinFormsApp1
         public void MarcarComoRetirado()
         {
             if (!Disponible) throw new InvalidOperationException("El resultado aún no se encuentra disponible para su retiro.");
-            if (Retirado) throw new InvalidOperationException("Este resultado ya fue retirado previamente.");
+            if (Retirado) throw new InvalidOperationException("Este resultado ya fue retirado.");
 
             Retirado = true;
         }

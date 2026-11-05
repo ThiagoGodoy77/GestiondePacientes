@@ -1,8 +1,7 @@
 using System;
 using System.Windows.Forms;
-using WinFormsApp1;
 
-namespace WinFormsApp1
+namespace WinFormsApp1.CentroMedico.WinForms
 {
     static class Program
     {

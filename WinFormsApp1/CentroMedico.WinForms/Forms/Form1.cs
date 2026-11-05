@@ -4,8 +4,11 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using Microsoft.EntityFrameworkCore;
-using WinFormsApp1.Datos;
-//using WinFormsApp1.Servicios;
+using WinFormsApp1.CentroMedico.Business.Interfaces;
+using WinFormsApp1.CentroMedico.Business.Servicios;
+using WinFormsApp1.CentroMedico.Data.Datos;
+using WinFormsApp1.CentroMedico.Data.Entidades;
+using WinFormsApp1.CentroMedico.WinForms.Forms;
 
 namespace WinFormsApp1
 {
@@ -197,10 +200,13 @@ namespace WinFormsApp1
 
             try
             {
-                var paciente = new Paciente(dni, nombre, apellido);
-                gestor.SacarTurno(paciente, estudio, horario);
+                var pacienteIngresado = new Paciente(dni, nombre, apellido);
 
-                MostrarInformacion($"Turno registrado exitosamente para {paciente.NombreCompleto} el {horario:dd/MM} a las {horario:HH:mm} hs.");
+                // Guardamos el objeto Turno devuelto por la lógica de negocio
+                var turnoRegistrado = gestor.SacarTurno(pacienteIngresado, estudio, horario);
+
+                // Usamos turnoRegistrado.Paciente.NombreCompleto para mostrar el nombre real en la BD
+                MostrarInformacion($"Turno registrado exitosamente para {turnoRegistrado.Paciente.NombreCompleto} el {horario:dd/MM} a las {horario:HH:mm} hs.");
 
                 LimpiarFormularioDeTurno();
                 txtDniConsulta.Text = dni;
@@ -209,7 +215,6 @@ namespace WinFormsApp1
             }
             catch (InvalidOperationException ex)
             {
-                // Errores esperados de negocio (horario ocupado, fuera de horario, etc.).
                 MostrarAdvertencia(ex.Message);
                 ActualizarHorarios();
             }
@@ -276,6 +281,29 @@ namespace WinFormsApp1
             }
         }
 
+        // ───────────────────────── Sección de Reportes ─────────────────────────
+
+        private void btnVerEstadisticas_Click(object sender, EventArgs e)
+        {
+            using var pinForm = new PinForm();
+
+            // Si el usuario presiona "Ingresar" en la ventana del PIN
+            if (pinForm.ShowDialog(this) == DialogResult.OK)
+            {
+                // Validar el PIN estático
+                if (pinForm.PinIngresado == "1234")
+                {
+                    var estadisticas = gestor.ObtenerEstadisticasTurnosPorEstudio();
+                    using var reporte = new EstadisticasForm(estadisticas);
+                    reporte.ShowDialog(this);
+                }
+                else
+                {
+                    MessageBox.Show("PIN incorrecto. Acceso denegado a los reportes.", "Seguridad", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+        }
+
         // ───────────────────────── Helpers ─────────────────────────
 
         /// <summary>
@@ -308,5 +336,6 @@ namespace WinFormsApp1
 
         private static void MostrarInformacion(string mensaje) =>
             MessageBox.Show(mensaje, "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
     }
 }

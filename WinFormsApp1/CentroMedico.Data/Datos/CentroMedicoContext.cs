@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using WinFormsApp1.CentroMedico.Data.Entidades;
 
-namespace WinFormsApp1
+namespace WinFormsApp1.CentroMedico.Data.Datos
 {
     public class CentroMedicoContext : DbContext
     {

@@ -2,7 +2,7 @@
 
 **Autores:** Godoy Thiago, Bortoluzzi Fernando
 
-**Materia:** Metodologías de la Programación II
+Metodologías de la Programación II
 **Profesor:** Botta Christian
 
 Aplicación de escritorio desarrollada en **C# y .NET con Windows Forms**, diseñada para facilitar las tareas del personal de recepción de un centro médico. Permite gestionar consultas de turnos, reservas y retiro de resultados desde una interfaz centralizada, sencilla e intuitiva.
@@ -40,6 +40,10 @@ Esta organización permite:
 - Centralizar las operaciones de gestión de pacientes, turnos y resultados.
 - Facilitar las modificaciones y la incorporación de nuevas funcionalidades.
 - Mantener los datos almacenados localmente entre ejecuciones.
+
+## 🎯 Objetivo del proyecto
+
+Desarrollar una herramienta que centralice las operaciones habituales de recepción médica, simplifique el acceso a la información y mejore la organización de los turnos y la entrega de resultados.
 
 ## ▶️ Ejecución del proyecto
 
@@ -111,9 +115,7 @@ Si todo sale bien, el resultado final muestra algo como:
 Passed! - Failed: 0, Passed: 32, Skipped: 0
 ```
 
-## 🎯 Objetivo del proyecto
 
-Desarrollar una herramienta que centralice las operaciones habituales de recepción médica, simplifique el acceso a la información y mejore la organización de los turnos y la entrega de resultados.
 
 ---
 

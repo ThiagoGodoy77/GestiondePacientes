@@ -2,7 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace WinFormsApp1
+namespace WinFormsApp1.CentroMedico.WinForms.Forms
 {
     public class SeleccionarFechaForm : Form
     {
