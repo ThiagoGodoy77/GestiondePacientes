@@ -141,19 +141,31 @@ namespace WinFormsApp1
             ActualizarHorarios();
         }
 
+        
         private void MostrarTurno(string dni)
         {
             var turnos = gestor.ConsultarTurnos(dni);
 
             if (turnos != null && turnos.Any())
             {
-                string turnosTexto = string.Join(
-                    Environment.NewLine,
-                    turnos.Select(t => $"Turno: {t.FechaHora:dd/MM HH:mm} hs - {t.Estudio.Nombre}"));
+                var turnosTexto = turnos.Select(t =>
+                {
+                    string descripcion =
+                        $"{t.FechaHora:dd/MM HH:mm} hs - {t.Estudio.Nombre}";
+
+                    if (!string.IsNullOrWhiteSpace(t.Estudio.Profesional))
+                        descripcion += $" - {t.Estudio.Profesional}";
+
+                    if (!string.IsNullOrWhiteSpace(t.Estudio.Asistente))
+                        descripcion += $" - Asistente: {t.Estudio.Asistente}";
+
+                    return descripcion;
+                }).ToList();
 
                 using var ventana = new ConsultaTurnosForm(
                     turnos.First().Paciente.NombreCompleto,
-                    turnos.Select(t => $"{t.FechaHora:dd/MM HH:mm} hs - {t.Estudio.Nombre}").ToList());
+                    turnosTexto);
+
                 ventana.ShowDialog(this);
             }
             else
@@ -161,6 +173,7 @@ namespace WinFormsApp1
                 MostrarAdvertencia("No se encontraron turnos próximos para el DNI ingresado.");
             }
         }
+
 
         // ───────────────────────── Consultar turno ─────────────────────────
 
