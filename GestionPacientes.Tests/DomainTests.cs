@@ -251,11 +251,13 @@ namespace GestionPacientes.Tests
         // ---------------------------------------------------------------------
 
         [Fact]
-        public void CasoNormal_RegistrarPacienteExistente_ActualizaSusDatos()
+        public void CasoError_RegistrarPacienteExistenteConOtroNombre_LanzaInvalidOperationException()
         {
-            _gestor.RegistrarPaciente(TestData.NuevoPaciente(nombre: "Carlos", apellido: "Gomez"));
+            Assert.Throws<InvalidOperationException>(() =>
+                _gestor.RegistrarPaciente(TestData.NuevoPaciente(nombre: "Carlos", apellido: "Gomez")));
 
-            Assert.Equal("Carlos Gomez", _gestor.ConsultarPaciente(TestData.DniPaciente).NombreCompleto);
+            // Los datos originales no se pisan.
+            Assert.Equal("Juan Perez", _gestor.ConsultarPaciente(TestData.DniPaciente).NombreCompleto);
         }
 
         [Fact]
@@ -331,7 +333,7 @@ namespace GestionPacientes.Tests
         [Theory]
         [InlineData(-1, 10, 0)]   // Fecha pasada
         [InlineData(1, 7, 30)]    // Antes de abrir (08:00)
-        [InlineData(1, 18, 0)]    // Hora de cierre
+        [InlineData(1, 18, 0)]    // Hora de cierre (el último turno es a las 17:30)
         [InlineData(1, 10, 15)]   // Fuera de bloque de 30 min
         public void CasoBorde_SacarTurnoEnHorarioInvalido_LanzaInvalidOperationException(int dias, int hora, int minutos)
         {
@@ -415,7 +417,7 @@ namespace GestionPacientes.Tests
         }
 
         [Fact]
-        public void CasoBorde_ConsultarTurnosConDniInexistente_DevuelveListaVacia()
+        public void CasoBorde_ConsultarTurnosConDniInvalido_DevuelveListaVacia()
         {
             Assert.Empty(_gestor.ConsultarTurnos("abc"));
         }
@@ -577,7 +579,7 @@ namespace GestionPacientes.Tests
 
         [Theory]
         [InlineData(null)]
-        [InlineData("abc")]
+        [InlineData("   ")]
         public void CasoBorde_NormalizarValorNoValido_DevuelveCadenaVacia(string ingresado)
         {
             Assert.Equal("", GestorDeAtencion.NormalizarDni(ingresado));
@@ -588,8 +590,8 @@ namespace GestionPacientes.Tests
         [InlineData("12345678", true)]   // 8 dígitos: límite superior
         [InlineData("123456", false)]    // uno menos que el mínimo
         [InlineData("123456789", false)] // uno más que el máximo
-        [InlineData("", false)]          // supuesto: vacío no es válido (verificar contra EsDniValido)
-        [InlineData("abcdefgh", false)]  // supuesto: letras no son válidas (verificar contra EsDniValido)
+        [InlineData("", false)]          // vacío
+        [InlineData("abcdefgh", false)]  // letras
         public void EsDniValido_AceptaSoloSieteUOchoDigitos(string dni, bool esperado)
         {
             Assert.Equal(esperado, GestorDeAtencion.EsDniValido(dni));
