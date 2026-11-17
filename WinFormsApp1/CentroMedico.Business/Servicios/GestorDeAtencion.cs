@@ -65,7 +65,7 @@ namespace WinFormsApp1.CentroMedico.Business.Servicios
 
             if (!mismoNombre || !mismoApellido)
                 throw new InvalidOperationException(
-                    $"El DNI #{dni} ya pertenece a '{existente.NombreCompleto}'. No se puede registrar con un nombre diferente.");
+                    $"El DNI #{dni} ya pertenece a otro paciente. No se puede registrar con un nombre diferente.");
         }
 
         public Paciente ConsultarPaciente(string dni)
@@ -203,7 +203,7 @@ namespace WinFormsApp1.CentroMedico.Business.Servicios
 
                 if (!mismoNombre || !mismoApellido)
                     throw new InvalidOperationException(
-                        $"El DNI #{dni} ya pertenece a '{dbPaciente.NombreCompleto}'. No se puede registrar con un nombre diferente.");
+                        $"El DNI #{dni} ya pertenece a otro paciente. No se puede registrar con un nombre diferente.");
             }
 
             var nuevoTurno = new Turno(fechaHora, dbPaciente, dbEstudio);
