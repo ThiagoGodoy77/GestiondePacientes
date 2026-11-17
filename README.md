@@ -52,17 +52,21 @@ Las pantallas se comunican exclusivamente con la lógica de negocio a través de
 Desde una terminal:
 
 ```bash
-git clone [https://github.com/ThiagoGodoy77/GestiondePacientes.git](https://github.com/ThiagoGodoy77/GestiondePacientes.git)
+git clone https://github.com/ThiagoGodoy77/GestiondePacientes.git
 cd GestiondePacientes
 dotnet run --project WinFormsApp1
+```
 
-###
+`dotnet run` restaura las dependencias, compila y abre la aplicación. La primera vez se crea automáticamente la base de datos local (`gestionpacientes.db`).
+
+**Desde Visual Studio:** abrí el archivo de solución (`WinForm.slnx`), dejá `WinFormsApp1` como proyecto de inicio y presioná **F5**.
+
 ## ✅ Pruebas automatizadas
 
-El repositorio incorpora el proyecto GestionPacientes.Tests, una suite de pruebas unitarias desarrollada con xUnit y potenciada con IA que garantiza la calidad del código cubriendo:
+El repositorio incluye el proyecto `GestionPacientes.Tests`, con pruebas unitarias y de integración desarrolladas con xUnit, con asistencia de IA en su elaboración. Cubren:
 
 - **Dominio:** las clases `Paciente`, `Estudio`, `Turno` y `Resultado`, incluidas sus validaciones y el ciclo de vida del retiro de resultados.
-- **Lógica del proyecto (`GestorDeAtencion`):** la agenda (horarios de 08:00 a 17:30 en bloques de 30 minutos, horarios ocupados, fechas pasadas y límites de atención), el registro de pacientes, la consulta de turnos por DNI, el registro de resultados y su retiro, y las estadísticas por estudio.
+- **Lógica de negocio (`GestorDeAtencion`):** la agenda (horarios de 08:00 a 17:30 en bloques de 30 minutos, horarios ocupados, fechas pasadas y límites de atención), el registro de pacientes, la consulta de turnos por DNI, el registro de resultados y su retiro, y las estadísticas por estudio.
 - **Validación del DNI:** normalización (se quitan puntos, guiones y espacios) y control de que tenga entre 7 y 8 dígitos numéricos.
 
 Cada prueba corresponde a un **Caso Normal**, un **Caso Borde** o un **Caso de Error**. Las que usan la base de datos parten de una base vacía y la eliminan al terminar, y se ejecutan de a una para no interferir entre sí.
