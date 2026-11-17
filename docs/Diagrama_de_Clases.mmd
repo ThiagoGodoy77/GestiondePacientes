@@ -1,52 +1,134 @@
 classDiagram
+    direction TB
+
+    class Program {
+        +Main()
+    }
+
+    class Form1 {
+        -gestor: IGestorDeAtencion
+        -catalogoEstudios: List~Estudio~
+        -fechaTurno: DateTime
+        #OnLoad(e: EventArgs)
+        -CargarDatosSemilla()
+        -MostrarTurno(dni: string)
+        -btnConsultarTurno_Click(sender, e)
+        -btnSacarTurno_Click(sender, e)
+        -btnRetirarResultado_Click(sender, e)
+        -btnVerEstadisticas_Click(sender, e)
+    }
+
+    class IGestorDeAtencion {
+        <<interface>>
+        +RegistrarPaciente(paciente: Paciente)
+        +ConsultarPaciente(dni: string) Paciente
+        +ConsultarTurnos(dni: string) List~Turno~
+        +ObtenerHorariosDisponibles(fecha: DateTime) List~DateTime~
+        +SacarTurno(paciente: Paciente, estudio: Estudio, fechaHora: DateTime) Turno
+        +ObtenerTurnosPendientesDelDia(fecha: DateTime?) List~Turno~
+        +RegistrarResultado(resultado: Resultado)
+        +ConsultarResultadoPendientePorDni(dni: string) Resultado
+        +RegistrarRetiroResultado(idResultado: int) bool
+        +RegistrarRetiroResultado(dni: string) bool
+        +ObtenerEstadisticasTurnosPorEstudio() Dictionary~string, int~
+    }
+
     class GestorDeAtencion {
-        - pacientes: List~Paciente~
-        - turnos: List~Turno~
-        - resultados: List~Resultado~
-        + ConsultarTurno(dni: string): Turno
-        + SacarTurno(paciente: Paciente, estudio: Estudio, fechaHora: DateTime): Turno
-        + AnularTurno(turno: Turno): bool
-        + RegistrarRetiroResultado(idResultado: int): bool
+        +GestorDeAtencion()
+        +NormalizarDni(dni: string) string
+        +EsDniValido(dni: string) bool
+        +RegistrarPaciente(paciente: Paciente)
+        +ConsultarPaciente(dni: string) Paciente
+        +ConsultarTurnos(dni: string) List~Turno~
+        +ObtenerHorariosDisponibles(fecha: DateTime) List~DateTime~
+        +SacarTurno(paciente: Paciente, estudio: Estudio, fechaHora: DateTime) Turno
+        +ObtenerTurnosPendientesDelDia(fecha: DateTime?) List~Turno~
+        +RegistrarResultado(resultado: Resultado)
+        +ConsultarResultadoPendientePorDni(dni: string) Resultado
+        +RegistrarRetiroResultado(idResultado: int) bool
+        +RegistrarRetiroResultado(dni: string) bool
+        +ObtenerEstadisticasTurnosPorEstudio() Dictionary~string, int~
+        -EsHorarioDeAtencion(fechaHora: DateTime) bool
+        -ResultadosPendientesQuery(context, dniNormalizado) IQueryable~Resultado~
+    }
+
+    class CentroMedicoContext {
+        +Pacientes: DbSet~Paciente~
+        +Estudios: DbSet~Estudio~
+        +Turnos: DbSet~Turno~
+        +Resultados: DbSet~Resultado~
+        #OnConfiguring(optionsBuilder)
+        #OnModelCreating(modelBuilder)
     }
 
     class Paciente {
-        - dni: string
-        - nombre: string
-        - apellido: string
-        + GetDni(): string
+        +Dni: string
+        +Nombre: string
+        +Apellido: string
+        +NombreCompleto: string
+        +Paciente(dni: string, nombre: string, apellido: string)
+        +ActualizarDatosPersonales(nuevoNombre: string, nuevoApellido: string)
     }
 
     class Estudio {
-        - id: int
-        - nombre: string
-        - descripcion: string
-        - profesional: string
-        - asistente: string
-        + GetNombre(): string
-        + GetProfesional(): string
+        +Id: int
+        +Nombre: string
+        +Descripcion: string
+        +Profesional: string
+        +Asistente: string
+        +Estudio(nombre: string, descripcion: string, profesional: string, asistente: string)
     }
 
     class Turno {
-        - fechaHora: DateTime
-        - paciente: Paciente
-        - estudio: Estudio
-        + GetFechaHora(): DateTime
-        + GetPaciente(): Paciente
+        +Id: int
+        +FechaHora: DateTime
+        +PacienteDni: string
+        +Paciente: Paciente
+        +EstudioId: int
+        +Estudio: Estudio
+        +Turno(fechaHora: DateTime, paciente: Paciente, estudio: Estudio)
     }
 
     class Resultado {
-        - id: int
-        - turnoAsociado: Turno
-        - disponible: bool
-        - retirado: bool
-        + MarcarComoRetirado(): void
-        + EstaDisponible(): bool
+        +Id: int
+        +TurnoId: int
+        +TurnoAsociado: Turno
+        +Disponible: bool
+        +Retirado: bool
+        +Resultado(turnoAsociado: Turno, disponible: bool)
+        +MarcarComoRetirado()
     }
 
-    %% Relaciones (Composición y Agregación)
-    GestorDeAtencion "1" *-- "*" Paciente : gestiona
-    GestorDeAtencion "1" *-- "*" Turno : gestiona
-    GestorDeAtencion "1" *-- "*" Resultado : gestiona
-    Turno "1" o-- "1" Paciente : pertenece a
-    Turno "1" o-- "1" Estudio : requiere
-    Resultado "1" o-- "1" Turno : corresponde a
+    class SeleccionarFechaForm {
+        +FechaSeleccionada: DateTime
+        +SeleccionarFechaForm(fechaInicial: DateTime)
+    }
+
+    class ConsultaTurnosForm {
+        +ConsultaTurnosForm(nombrePaciente: string, turnos: IReadOnlyCollection~string~)
+    }
+
+    class PinForm {
+        +PinIngresado: string
+        +PinForm()
+    }
+
+    class EstadisticasForm {
+        +EstadisticasForm(estadisticas: IReadOnlyDictionary~string, int~)
+    }
+
+    Program ..> Form1 : inicia
+    Form1 --> IGestorDeAtencion : usa
+    GestorDeAtencion ..|> IGestorDeAtencion : implementa
+    GestorDeAtencion --> CentroMedicoContext : consulta y persiste
+    CentroMedicoContext ..> Paciente : DbSet
+    CentroMedicoContext ..> Estudio : DbSet
+    CentroMedicoContext ..> Turno : DbSet
+    CentroMedicoContext ..> Resultado : DbSet
+    Turno "0..*" --> "1" Paciente : pertenece a
+    Turno "0..*" --> "1" Estudio : requiere
+    Resultado "0..1" --> "1" Turno : corresponde a
+    Form1 ..> SeleccionarFechaForm : selecciona fecha
+    Form1 ..> ConsultaTurnosForm : muestra turnos
+    Form1 ..> PinForm : solicita PIN
+    Form1 ..> EstadisticasForm : muestra estadísticas
