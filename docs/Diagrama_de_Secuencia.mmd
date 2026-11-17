@@ -1,58 +1,23 @@
 sequenceDiagram
-    autonumber
     actor Recepcionista
-    participant UI as Form1
-    participant G as GestorDeAtencion
-    participant DB as CentroMedicoContext / SQLite
+    participant Sistema as Recepcion
+    participant T as Turno
 
-    Recepcionista->>UI: Ingresa DNI, nombre, apellido, estudio y horario
-    UI->>UI: TryObtenerDni()
-    alt DNI vacío o inválido
-        UI-->>Recepcionista: Muestra advertencia y no continúa
-    else Datos de entrada válidos
-        UI->>G: SacarTurno(paciente, estudio, fechaHora)
-        G->>G: Valida paciente, estudio, DNI y campos obligatorios
-        G->>G: Valida fecha futura y horario de atención
-        alt Datos inválidos o fecha/hora fuera de agenda
-            G-->>UI: Lanza excepción de validación
-            UI-->>Recepcionista: Muestra el motivo del rechazo
-        else Validaciones correctas
-            G->>DB: Inicia transacción
-            G->>DB: Comprueba si el horario ya está ocupado
-            alt Horario ocupado
-                DB-->>G: Ya existe un turno en esa fecha y hora
-                G-->>UI: Lanza "El horario seleccionado ya se encuentra ocupado"
-                UI-->>Recepcionista: Muestra advertencia y actualiza horarios
-            else Horario libre
-                G->>DB: Busca el estudio por Id o nombre
-                opt El estudio no existe y no tiene un Id inválido
-                    G->>DB: Agrega el estudio al catálogo
-                end
-                G->>DB: Busca al paciente por DNI normalizado
-                alt Paciente existente pero nombre o apellido no coinciden
-                    G->>G: Compara los datos personales
-                    G-->>UI: Lanza excepción; la transacción se revierte
-                    UI-->>Recepcionista: Muestra el motivo del rechazo
-                else Paciente nuevo o datos personales coincidentes
-                    opt Paciente nuevo
-                        G->>DB: Agrega el paciente
-                    end
-                    G->>DB: Agrega el turno y guarda los cambios
-                    Note over G,DB: El índice único de FechaHora también evita reservas duplicadas concurrentes
-                    alt Guardado correcto
-                        G->>DB: Confirma transacción
-                        G-->>UI: Devuelve el turno registrado
-                        UI-->>Recepcionista: Muestra confirmación y limpia el formulario
-                        UI->>G: ConsultarTurnos(dni)
-                        G-->>UI: Devuelve próximos turnos
-                        UI->>G: ObtenerHorariosDisponibles(fecha)
-                        G-->>UI: Devuelve horarios libres
-                    else Error al guardar
-                        DB-->>G: Error de persistencia / conflicto de horario
-                        G-->>UI: Lanza InvalidOperationException
-                        UI-->>Recepcionista: Muestra el error y actualiza horarios
-                    end
-                end
-            end
+    Recepcionista->>Sistema: SacarTurno(dni, idEstudio, fechaHora)
+    %% Autodelegación 1: Buscar al paciente en memoria
+    Sistema->>Sistema: paciente = BuscarPaciente(dni)
+    alt Paciente no existe
+        Sistema-->>Recepcionista: Error: DNI no registrado en el sistema
+    else Paciente encontrado
+        %% Autodelegación 2: Verificar que el horario no esté pisado
+        Sistema->>Sistema: libre = VerificarDisponibilidad(fechaHora)
+        alt Horario ocupado
+            Sistema-->>Recepcionista: Error: El horario seleccionado no está disponible
+        else Horario disponible
+            %% Creación del objeto y asignación
+            Sistema->>T: new Turno(paciente, estudio, fechaHora)
+            T-->>Sistema: nuevoTurno
+            Sistema->>Sistema: agregarTurnoLista(nuevoTurno)
+            Sistema-->>Recepcionista: Éxito: Turno asignado correctamente
         end
     end
