@@ -1,106 +1,60 @@
 # 🏥 Gestión de Pacientes
 
-**Autores:** Bortoluzzi Fernando , Godoy Thiago
-
-Metodologías de la Programación II
+**Autores:** Bortoluzzi Fernando, Godoy Thiago  
+**Materia:** Metodologías de la Programación II  
 **Profesor:** Botta Christian
 
-Aplicación de escritorio desarrollada en **C# y .NET con Windows Forms**, pensada para el personal de recepción de un centro médico. Permite consultar turnos, reservar nuevos, registrar el retiro de resultados y ver estadísticas de la demanda, todo desde una interfaz centralizada, sencilla e intuitiva. Los datos se guardan en una base SQLite local, que se conservan entre ejecuciones.
+Aplicación de escritorio desarrollada en **C# y .NET 10 con Windows Forms**, diseñada para optimizar la atención diaria en la recepción de un centro médico. Centraliza en una única pantalla principal la consulta de turnos, la asignación de nuevas citas, el registro de retiro de resultados y la visualización de estadísticas de demanda. Los datos persisten de forma local mediante **SQLite y Entity Framework Core**, conservándose entre ejecuciones.
 
 ## 🚀 Funcionalidades principales
 
-- **🔎 Consulta de turnos:** Búsqueda por DNI para ver la fecha, el horario y el estudio de los turnos próximos del paciente, ordenados del más cercano al más lejano, en una ventana dedicada.
-- **📅 Reserva de turnos:** Elección del estudio, de la fecha desde un selector y de un horario disponible de la agenda (de 8:00 a 18:00, en bloques de 30 minutos). El sistema no permite reservar horarios ocupados ni fechas pasadas. Si el paciente es nuevo, se registra automáticamente; si el DNI ya existe con otro nombre, la reserva se rechaza para evitar errores de carga.
-- **📋 Gestión de resultados:** Consulta de los resultados pendientes de retiro y registro de su entrega cuando están disponibles. Un resultado no puede entregarse dos veces ni antes de estar listo.
-- **📊 Estadísticas:** Desde el encabezado de la ventana principal, muestra la cantidad de turnos reservados por estudio médico.
+- **🔎 Consulta de turnos (`ConsultaTurnosForm`):** Búsqueda por DNI (con normalización automática de puntos, guiones y espacios) para visualizar en una ventana dedicada los próximos turnos del paciente ordenados cronológicamente, detallando fecha, horario, estudio médico, profesional responsable y asistente a cargo.
+- **📅 Reserva de turnos (`Form1` y `SeleccionarFechaForm`):** Selección del estudio médico en la pantalla principal, elección de la fecha mediante el calendario (`SeleccionarFechaForm`) y asignación de una franja horaria disponible (de `08:00` a `18:00`, en intervalos de 30 minutos). El sistema filtra automáticamente los horarios ocupados y bloquea fechas pasadas o fuera del rango de atención. Si el paciente es nuevo, se registra automáticamente dentro de la misma transacción; si el DNI ya existe con otro nombre o apellido, la reserva se rechaza para evitar errores de carga.- **📋 Gestión y retiro de resultados:** Consulta de informes pendientes a partir del DNI del paciente y registro formal de su entrega. Antes de concretar el retiro, el sistema verifica tres condiciones: que el turno ya haya transcurrido, que el informe esté disponible y que no haya sido entregado con anterioridad. Además, despliega un cuadro de diálogo de confirmación con los datos completos del paciente, el estudio y la fecha de atención antes de actualizar su estado en la base de datos.
+- **📊 Estadísticas de demanda (`PinForm` y `EstadisticasForm`):** Accesible desde el encabezado de la ventana principal y protegido mediante un **PIN de administración** (con caracteres enmascarados) para restringir su uso al personal autorizado. Una vez validado el acceso, muestra el conteo total de turnos reservados agrupados por estudio médico, manejando de forma segura los casos sin registros.
 
 ## 🛠️ Tecnologías utilizadas
 
 - **Lenguaje:** C#
-- **Plataforma:** .NET 10
+- **Plataforma:** .NET 10 
 - **Interfaz gráfica:** Windows Forms (WinForms)
-- **Persistencia y ORM:** Entity Framework Core con SQLite
+- **Persistencia y ORM:** Entity Framework Core con SQLite 
 - **Tecnología de consulta:** LINQ
 - **Pruebas automatizadas:** xUnit
 - **Herramientas de compilación y gestión:** .NET CLI / MSBuild
-- **Control de versiones:** Git y GitHub
 
 ## 🏗️ Arquitectura y diseño
 
-El código está dividido en tres capas, cada una en su propia carpeta dentro de `WinFormsApp1`, para separar las responsabilidades y facilitar el mantenimiento:
+El código está dividido en tres capas dentro de `WinFormsApp1` para separar responsabilidades y facilitar el mantenimiento, acompañadas por un proyecto independiente de pruebas:
 
-- **`CentroMedico.Data`** — acceso a datos:
-  - `Entidades/` — las clases del dominio: `Paciente`, `Estudio`, `Turno` y `Resultado`.
-  - `Datos/` — `CentroMedicoContext`, que administra el acceso a la base SQLite mediante Entity Framework Core.
-- **`CentroMedico.Business`** — lógica del negocio:
-  - `Interfaces/` — el contrato `IGestorDeAtencion`, que evita que la interfaz dependa de una implementación concreta.
-  - `Servicios/` — `GestorDeAtencion`, que centraliza las reglas del centro: agenda, reservas, consultas, resultados y estadísticas.
+- **`CentroMedico.Data`** — acceso a datos y dominio:
+  - `Entidades/` — clases del dominio (`Paciente`, `Estudio`, `Turno` y `Resultado`) implementadas bajo programación defensiva (propiedades con *setters* privados, validaciones en constructores y control de estados).
+  - `Datos/` — `CentroMedicoContext`, que administra el mapeo relacional y el acceso a la base de datos SQLite mediante Entity Framework Core.
+- **`CentroMedico.Business`** — lógica de negocio:
+  - `Interfaces/` — contrato `IGestorDeAtencion`, que desacopla la interfaz gráfica de la implementación concreta.
+  - `Servicios/` — `GestorDeAtencion`, que centraliza las reglas del centro: cálculo de agenda disponible, reservas transaccionales, consultas por DNI, entrega segura de resultados y estadísticas.
 - **`CentroMedico.WinForms`** — presentación:
-  - `Forms/` — `Form1` (ventana principal), `ConsultaTurnosForm`, `SeleccionarFechaForm`, `EstadisticasForm` y `PinForm`.
+  - `Forms/` — `Form1` (ventana principal), `ConsultaTurnosForm`, `SeleccionarFechaForm`, `PinForm` y `EstadisticasForm`.
   - `Program.cs` — punto de entrada de la aplicación.
+- **`GestionPacientes.Tests`** — proyecto de pruebas unitarias e integración automatizadas en xUnit.
 
-Las pantallas solo se comunican con la lógica a través de `IGestorDeAtencion`.
-
-La documentación adicional (diagramas de secuencia y de clases) se encuentra en la carpeta `docs/`.
+Las pantallas se comunican exclusivamente con la lógica de negocio a través de `IGestorDeAtencion`. La documentación adicional (diagramas de clases y de secuencia) se encuentra en la carpeta `docs/`.
 
 ## 🎯 Objetivo del proyecto
 
-Desarrollar una herramienta que centralice las operaciones habituales de recepción médica, simplifique el acceso a la información y mejore la organización de los turnos y la entrega de resultados.
+Desarrollar una herramienta que centralice las operaciones habituales de recepción médica, simplifique el acceso a la información y garantice la consistencia en la gestión de turnos y la entrega de resultados.
 
 ## ▶️ Ejecución del proyecto
 
-**Requisitos previos**
+### Requisitos previos
 
 - Windows y un entorno compatible con Windows Forms.
-- SDK de .NET compatible con la versión del proyecto.
+- SDK de .NET 10 instalado.
 
-**Pasos para ejecutar**
+### Pasos para ejecutar
 
 Desde una terminal:
 
 ```bash
-git clone https://github.com/ThiagoGodoy77/GestiondePacientes
+git clone [https://github.com/ThiagoGodoy77/GestiondePacientes.git](https://github.com/ThiagoGodoy77/GestiondePacientes.git)
 cd GestiondePacientes
 dotnet run --project WinFormsApp1
-```
-
-`dotnet run` restaura las dependencias, compila y abre la aplicación. La primera vez, se crea la base de datos local (`gestionpacientes.db`) automáticamente 
-
-**Desde Visual Studio:** abrir el archivo de la solución (`.sln`), dejar `WinFormsApp1` como proyecto de inicio y presioná **F5**.
-
-
-## ✅ Pruebas automatizadas
-
-El repositorio incluye el proyecto `GestionPacientes.Tests`, con pruebas unitarias en xUnit que cubren:
-
-- **Dominio:** Las clases `Paciente`, `Estudio`, `Turno` y `Resultado`, incluidas sus validaciones y el ciclo de vida del retiro de resultados.
-- **Lógica de negocio (`GestorDeAtencion`):** La agenda (horarios válidos, ocupados, fechas pasadas y límites de atención), la consulta de turnos por DNI, el registro de resultados y de su retiro, y las estadísticas por estudio.
-- **Validación del DNI:** Normalización (puntos, guiones y espacios) y control de que tenga 7 u 8 dígitos y solo números.
-
-Cada prueba cubre un Caso Normal, un Caso Borde o un Caso de Error. Las pruebas que usan la base de datos parten de una base vacía y la eliminan al terminar (se ejecutan una por vez para no interferir entre sí).
-
-**Pasos para ejecutarlas**
-
-Parado en la carpeta que contiene la solución (donde están las carpetas `WinFormsApp1` y `GestionPacientes.Tests`):
-
-1. Restaurar las dependencias del proyecto de pruebas:
-
-   ```bash
-   dotnet restore GestionPacientes.Tests/GestionPacientes.Tests.csproj
-   ```
-
-2. Correr las pruebas:
-
-   ```bash
-   dotnet test GestionPacientes.Tests/GestionPacientes.Tests.csproj
-   ```
-
-3. (Opcional) Ver el detalle de cada prueba ejecutada, no solo el resumen final:
-
-   ```bash
-   dotnet test GestionPacientes.Tests/GestionPacientes.Tests.csproj --logger "console;verbosity=detailed"
-   ```
-
----
-
-**Proyecto desarrollado con C# y .NET.**

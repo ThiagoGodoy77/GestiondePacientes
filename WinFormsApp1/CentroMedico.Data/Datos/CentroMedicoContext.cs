@@ -29,6 +29,9 @@ namespace WinFormsApp1.CentroMedico.Data.Datos
             modelBuilder.Entity<Resultado>()
                 .Property(r => r.TurnoId)
                 .HasColumnName("TurnoAsociadoId");
+            // Un solo turno por horario en todo el centro: la base lo garantiza aunque
+            // dos puestos intenten reservar a la vez.
+            modelBuilder.Entity<Turno>().HasIndex(t => t.FechaHora).IsUnique();
         }
     }
 }
