@@ -31,7 +31,7 @@ sequenceDiagram
                 G->>DB: Busca al paciente por DNI normalizado
                 alt Paciente existente pero nombre o apellido no coinciden
                     G->>G: Compara los datos personales
-                    G-->>UI: Lanza excepción; la transacción se revierte
+                    G-->>UI: Lanza excepción, la transacción se revierte
                     UI-->>Recepcionista: Muestra el motivo del rechazo
                 else Paciente nuevo o datos personales coincidentes
                     opt Paciente nuevo
