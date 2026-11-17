@@ -40,10 +40,6 @@ El código está dividido en tres capas dentro de `WinFormsApp1` para separar re
 
 Las pantallas se comunican exclusivamente con la lógica de negocio a través de `IGestorDeAtencion`. La documentación adicional (diagramas de clases y de secuencia) se encuentra en la carpeta `docs/`.
 
-## 🎯 Objetivo del proyecto
-
-Desarrollar una herramienta que centralice las operaciones habituales de recepción médica, simplifique el acceso a la información y garantice la consistencia en la gestión de turnos y la entrega de resultados.
-
 ## ▶️ Ejecución del proyecto
 
 ### Requisitos previos
@@ -59,3 +55,36 @@ Desde una terminal:
 git clone [https://github.com/ThiagoGodoy77/GestiondePacientes.git](https://github.com/ThiagoGodoy77/GestiondePacientes.git)
 cd GestiondePacientes
 dotnet run --project WinFormsApp1
+
+###
+## ✅ Pruebas automatizadas
+
+El repositorio incorpora el proyecto GestionPacientes.Tests, una suite de pruebas unitarias desarrollada con xUnit y potenciada con IA que garantiza la calidad del código cubriendo:
+
+- **Dominio:** las clases `Paciente`, `Estudio`, `Turno` y `Resultado`, incluidas sus validaciones y el ciclo de vida del retiro de resultados.
+- **Lógica del proyecto (`GestorDeAtencion`):** la agenda (horarios de 08:00 a 17:30 en bloques de 30 minutos, horarios ocupados, fechas pasadas y límites de atención), el registro de pacientes, la consulta de turnos por DNI, el registro de resultados y su retiro, y las estadísticas por estudio.
+- **Validación del DNI:** normalización (se quitan puntos, guiones y espacios) y control de que tenga entre 7 y 8 dígitos numéricos.
+
+Cada prueba corresponde a un **Caso Normal**, un **Caso Borde** o un **Caso de Error**. Las que usan la base de datos parten de una base vacía y la eliminan al terminar, y se ejecutan de a una para no interferir entre sí.
+
+### Pasos para ejecutarlas
+
+Parado en la carpeta que contiene la solución (donde están las carpetas `WinFormsApp1` y `GestionPacientes.Tests`):
+
+1. Restaurar las dependencias del proyecto de pruebas:
+
+   ```bash
+   dotnet restore GestionPacientes.Tests/GestionPacientes.Tests.csproj
+   ```
+
+2. Correr las pruebas:
+
+   ```bash
+   dotnet test GestionPacientes.Tests/GestionPacientes.Tests.csproj
+   ```
+
+3. (Opcional) Ver el detalle de cada prueba ejecutada, no solo el resumen final:
+
+   ```bash
+   dotnet test GestionPacientes.Tests/GestionPacientes.Tests.csproj --logger "console;verbosity=detailed"
+   ```
